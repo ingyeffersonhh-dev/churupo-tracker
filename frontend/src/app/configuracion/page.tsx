@@ -165,8 +165,8 @@ export default function ConfiguracionPage() {
                 </div>
 
                 {[
-                  { n: "1", text: "Abre Telegram y busca el bot de tu aplicación" },
-                  { n: "2", text: 'Escribe /start para iniciar el proceso de vinculación' },
+                  { n: "1", text: "Abre Telegram y busca el bot: @Churupo_Track_bot" },
+                  { n: "2", text: 'Haz clic en el botón de abajo o escribe /start para iniciar' },
                   { n: "3", text: "Ingresa tu email y contraseña de esta aplicación cuando el bot lo solicite" },
                   { n: "4", text: "¡Listo! Ya puedes registrar gastos escribiendo en lenguaje natural" },
                 ].map((step) => (
@@ -177,6 +177,31 @@ export default function ConfiguracionPage() {
                     <span style={{ fontSize: 14, color: "var(--text-primary)" }}>{step.text}</span>
                   </div>
                 ))}
+              </div>
+
+              <div style={{ marginTop: 24, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <a
+                  href="https://t.me/Churupo_Track_bot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                    padding: "12px 32px",
+                    fontSize: 16,
+                    background: "#229ED9",
+                    border: "none",
+                    width: "fit-content"
+                  }}
+                >
+                  <span>✈️</span> Abrir @Churupo_Track_bot
+                </a>
+                <div style={{ marginTop: 12, fontSize: 13, color: "var(--text-muted)" }}>
+                  Enlace directo: <a href="https://t.me/Churupo_Track_bot" style={{ color: "var(--accent-light)", textDecoration: "underline" }}>t.me/Churupo_Track_bot</a>
+                </div>
               </div>
             </div>
 
