@@ -1,6 +1,6 @@
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Any
 import json
 
 
@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_KEY: str
     SUPABASE_ANON_KEY: str
     DATABASE_URL: str = ""
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:3001"]
+    ALLOWED_ORIGINS: Any = ["http://localhost:3000", "http://localhost:3001"]
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
