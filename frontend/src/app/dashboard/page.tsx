@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { getAnalyticsSummary } from "@/lib/api";
+import { getAnalyticsSummary, downloadReport } from "@/lib/api";
 import CategoryBarsCard from "@/components/CategoryBarsCard";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
@@ -58,6 +58,7 @@ export default function DashboardPage() {
   const [prevSummary, setPrevSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState("");
+  const [exporting, setExporting] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -107,8 +108,8 @@ export default function DashboardPage() {
             <h1 className="page-title">Dashboard</h1>
             <p className="page-subtitle">Resumen de tus finanzas personales</p>
           </div>
-          {/* Month Selector */}
-          <div className="flex gap-2 items-center">
+          {/* Month Selector + Export */}
+          <div className="flex gap-2 items-center flex-wrap">
             <select
               id="month-select"
               className="form-select"
@@ -129,6 +130,34 @@ export default function DashboardPage() {
             >
               {[2024, 2025, 2026].map((y) => <option key={y}>{y}</option>)}
             </select>
+            <div className="flex gap-1" style={{ marginLeft: 8 }}>
+              <button
+                className="btn btn-secondary btn-sm"
+                disabled={!!exporting || loading}
+                onClick={async () => {
+                  setExporting("xlsx");
+                  try { await downloadReport("xlsx", month, year); }
+                  catch (e) { alert(e instanceof Error ? e.message : "Error"); }
+                  finally { setExporting(null); }
+                }}
+                title="Descargar Excel"
+              >
+                {exporting === "xlsx" ? "⏳" : "📗"} Excel
+              </button>
+              <button
+                className="btn btn-secondary btn-sm"
+                disabled={!!exporting || loading}
+                onClick={async () => {
+                  setExporting("pdf");
+                  try { await downloadReport("pdf", month, year); }
+                  catch (e) { alert(e instanceof Error ? e.message : "Error"); }
+                  finally { setExporting(null); }
+                }}
+                title="Descargar PDF"
+              >
+                {exporting === "pdf" ? "⏳" : "📕"} PDF
+              </button>
+            </div>
           </div>
         </div>
 

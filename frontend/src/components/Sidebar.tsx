@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/transacciones",  icon: "💳", label: "Transacciones" },
   { href: "/presupuestos",   icon: "🎯", label: "Presupuestos" },
   { href: "/categorias",     icon: "🏷️",  label: "Categorías" },
+  { href: "/gastos-fijos",   icon: "🔄", label: "Gastos Fijos" },
   { href: "/configuracion",  icon: "⚙️",  label: "Configuración" },
 ];
 

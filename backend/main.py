@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
-from routers import categories, budgets, merchant_rules, transactions, analytics, bot_internal
+from routers import categories, budgets, merchant_rules, transactions, analytics, bot_internal, recurring, export, recurring_processor
 
 app = FastAPI(
     title="PFM API - Gestión de Finanzas Personales",
@@ -29,4 +29,7 @@ app.include_router(merchant_rules.router)
 app.include_router(transactions.router)
 app.include_router(analytics.router)
 app.include_router(bot_internal.router)
+app.include_router(recurring.router)
+app.include_router(export.router)
+app.include_router(recurring_processor.router)
 

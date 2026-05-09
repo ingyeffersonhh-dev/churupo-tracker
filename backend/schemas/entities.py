@@ -125,3 +125,38 @@ class CSVUploadResponse(BaseModel):
     categorized: int
     uncategorized: int
     errors: list[str] = []
+
+
+# ─── Recurring Expenses ──────────────────────────────────────────────────────
+
+class RecurringExpenseCreate(BaseModel):
+    description: str = Field(..., min_length=1, max_length=200)
+    amount: Decimal = Field(..., gt=0)
+    currency: str = Field(..., pattern="^(USD|VES)$")
+    category_id: Optional[str] = None
+    day_of_month: int = Field(..., ge=1, le=28)  # Max 28 to avoid month-length issues
+
+
+class RecurringExpenseUpdate(BaseModel):
+    description: Optional[str] = Field(None, min_length=1, max_length=200)
+    amount: Optional[Decimal] = Field(None, gt=0)
+    currency: Optional[str] = Field(None, pattern="^(USD|VES)$")
+    category_id: Optional[str] = None
+    day_of_month: Optional[int] = Field(None, ge=1, le=28)
+    is_active: Optional[bool] = None
+
+
+class RecurringExpenseResponse(BaseModel):
+    id: str
+    user_id: str
+    description: str
+    amount: Decimal
+    currency: str
+    category_id: Optional[str] = None
+    day_of_month: int
+    is_active: bool
+    last_executed: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

@@ -109,3 +109,54 @@ export const createMerchantRule = (data: { keyword: string; category_id: string 
   fetchWithAuth("/merchant-rules/", { method: "POST", body: JSON.stringify(data) });
 export const deleteMerchantRule = (id: string) =>
   fetchWithAuth(`/merchant-rules/${id}`, { method: "DELETE" });
+
+// ─── Recurring Expenses ───────────────────────────────────────────────────────
+export const getRecurringExpenses = () => fetchWithAuth("/recurring/");
+export const createRecurringExpense = (data: {
+  description: string;
+  amount: number;
+  currency: string;
+  category_id?: string;
+  day_of_month: number;
+}) => fetchWithAuth("/recurring/", { method: "POST", body: JSON.stringify(data) });
+export const updateRecurringExpense = (id: string, data: {
+  description?: string;
+  amount?: number;
+  currency?: string;
+  category_id?: string;
+  day_of_month?: number;
+  is_active?: boolean;
+}) => fetchWithAuth(`/recurring/${id}`, { method: "PUT", body: JSON.stringify(data) });
+export const deleteRecurringExpense = (id: string) =>
+  fetchWithAuth(`/recurring/${id}`, { method: "DELETE" });
+export const toggleRecurringExpense = (id: string) =>
+  fetchWithAuth(`/recurring/${id}/toggle`, { method: "POST" });
+
+// ─── Export Reports ───────────────────────────────────────────────────────────
+export const downloadReport = async (format: "xlsx" | "pdf", month?: number, year?: number) => {
+  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+  const params = new URLSearchParams();
+  if (month) params.append("month", String(month));
+  if (year) params.append("year", String(year));
+  const qs = params.toString();
+
+  const res = await fetch(`${API_URL}/export/${format}${qs ? `?${qs}` : ""}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error("Error descargando reporte");
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const contentDisposition = res.headers.get("Content-Disposition");
+  const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
+  a.download = filenameMatch ? filenameMatch[1] : `reporte.${format}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+};
