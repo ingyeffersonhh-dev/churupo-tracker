@@ -155,28 +155,58 @@ export default function ConfiguracionPage() {
             </p>
 
             <div style={{ background: "var(--bg-secondary)", borderRadius: "var(--radius-lg)", padding: 24, border: "1px solid var(--border)" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                <div className="flex items-center gap-4">
-                  <div style={{ fontSize: 48 }}>📱</div>
-                  <div>
-                    <div className="font-bold text-lg">Cómo vincular el bot</div>
-                    <div className="text-secondary text-sm" style={{ marginTop: 4 }}>Sigue estos pasos para empezar a usar el bot</div>
+              <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
+                {/* Instructions Column */}
+                <div style={{ flex: "1 1 300px", display: "flex", flexDirection: "column", gap: 20 }}>
+                  <div className="flex items-center gap-4">
+                    <div style={{ fontSize: 48 }}>📱</div>
+                    <div>
+                      <div className="font-bold text-lg">Cómo vincular el bot</div>
+                      <div className="text-secondary text-sm" style={{ marginTop: 4 }}>Sigue estos pasos para empezar a usar el bot</div>
+                    </div>
                   </div>
+
+                  {[
+                    { n: "1", text: "Abre Telegram y busca el bot: @Churupo_Track_bot" },
+                    { n: "2", text: 'Escanea el QR o haz clic en el botón de abajo' },
+                    { n: "3", text: "Ingresa tu email y contraseña de esta aplicación" },
+                    { n: "4", text: "¡Listo! Ya puedes registrar gastos por mensaje" },
+                  ].map((step) => (
+                    <div key={step.n} className="flex gap-3 items-center">
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--grad-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+                        {step.n}
+                      </div>
+                      <span style={{ fontSize: 14, color: "var(--text-primary)" }}>{step.text}</span>
+                    </div>
+                  ))}
                 </div>
 
-                {[
-                  { n: "1", text: "Abre Telegram y busca el bot: @Churupo_Track_bot" },
-                  { n: "2", text: 'Haz clic en el botón de abajo o escribe /start para iniciar' },
-                  { n: "3", text: "Ingresa tu email y contraseña de esta aplicación cuando el bot lo solicite" },
-                  { n: "4", text: "¡Listo! Ya puedes registrar gastos escribiendo en lenguaje natural" },
-                ].map((step) => (
-                  <div key={step.n} className="flex gap-3 items-center">
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--grad-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
-                      {step.n}
-                    </div>
-                    <span style={{ fontSize: 14, color: "var(--text-primary)" }}>{step.text}</span>
+                {/* QR Code Column */}
+                <div style={{
+                  flex: "0 0 240px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(0,0,0,0.2)",
+                  borderRadius: "var(--radius-lg)",
+                  padding: 16,
+                  border: "1px solid var(--border)"
+                }}>
+                  <img
+                    src="/bot_qr.png"
+                    alt="QR Bot Telegram"
+                    style={{
+                      width: "100%",
+                      maxWidth: 200,
+                      borderRadius: "var(--radius-md)",
+                      boxShadow: "0 8px 30px rgba(0,0,0,0.4)"
+                    }}
+                  />
+                  <div style={{ marginTop: 12, fontWeight: 700, color: "var(--accent-light)", fontSize: 12 }}>
+                    @Churupo_Track_bot
                   </div>
-                ))}
+                </div>
               </div>
 
               <div style={{ marginTop: 24, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
