@@ -161,7 +161,7 @@ export default function GastosFijosPage() {
         {showForm && (
           <div className="card" style={{ marginBottom: 24, borderLeft: "3px solid var(--accent)" }}>
             <h3 className="text-lg font-bold mb-4">Nuevo Gasto Recurrente</h3>
-            <form onSubmit={handleSubmit} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+            <form onSubmit={handleSubmit} className="form-grid-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
               <div>
                 <label className="form-label">Descripción *</label>
                 <input

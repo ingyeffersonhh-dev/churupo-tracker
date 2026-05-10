@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AppLayout from "@/components/AppLayout";
+import Sidebar from "@/components/Sidebar";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore, initAuth } from "@/store/auth";
 import type { Budget, Category, AnalyticsSummary } from "@/types";
@@ -37,84 +37,90 @@ export default function BudgetsPage() {
     setLoading(false);
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch (status) {
-      case "green":
-        return "bg-green-500";
-      case "yellow":
-        return "bg-yellow-500";
-      case "red":
-        return "bg-red-500";
-      default:
-        return "bg-gray-300";
+      case "green": return { class: "badge-green", bar: "progress-green" };
+      case "yellow": return { class: "badge-yellow", bar: "progress-yellow" };
+      case "red": return { class: "badge-red", bar: "progress-red" };
+      default: return { class: "badge-gray", bar: "progress-green" };
     }
   };
 
-  if (loading) return <AppLayout><div className="p-6 text-center text-gray-500">Cargando...</div></AppLayout>;
+  if (loading) return (
+    <div className="app-shell">
+      <Sidebar />
+      <main className="main-content">
+        <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)" }}>Cargando...</div>
+      </main>
+    </div>
+  );
 
   return (
-    <AppLayout>
-      <div className="p-4 md:p-6 max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Presupuestos</h1>
+    <div className="app-shell">
+      <Sidebar />
+      <main className="main-content">
+        <div className="page-header flex items-center justify-between">
+          <div>
+            <h1 className="page-title">Presupuestos</h1>
+            <p className="page-subtitle">Controla tus gastos mensuales</p>
+          </div>
+        </div>
 
         {analytics && (
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <p className="text-sm text-gray-500">Gastado</p>
-              <p className="text-xl font-bold text-red-600 mt-1">${analytics.total_expenses_usd.toFixed(2)}</p>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-label">Gastado</div>
+              <div className="stat-value text-red">${analytics.total_expenses_usd.toFixed(2)}</div>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <p className="text-sm text-gray-500">Disponible</p>
-              <p className="text-xl font-bold text-green-600 mt-1">${analytics.balance_usd.toFixed(2)}</p>
+            <div className="stat-card">
+              <div className="stat-label">Disponible</div>
+              <div className="stat-value text-green">${analytics.balance_usd.toFixed(2)}</div>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <p className="text-sm text-gray-500">Ingresos</p>
-              <p className="text-xl font-bold text-blue-600 mt-1">${analytics.total_income_usd.toFixed(2)}</p>
+            <div className="stat-card">
+              <div className="stat-label">Ingresos</div>
+              <div className="stat-value text-accent">${analytics.total_income_usd.toFixed(2)}</div>
             </div>
           </div>
         )}
 
-        <div className="space-y-3">
-          {budgets.map((budget) => {
-            const cat = categories.find((c) => c.id === budget.category_id);
-            const catBreakdown = analytics?.by_category.find((b) => b.category_id === budget.category_id);
-            const spent = catBreakdown?.spent_usd || 0;
-            const percentage = budget.limit_amount > 0 ? (spent / budget.limit_amount) * 100 : 0;
-            const status = percentage >= 100 ? "red" : percentage >= 80 ? "yellow" : "green";
+        <div className="card">
+          {budgets.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)" }}>
+              🎯 No hay presupuestos para este mes
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              {budgets.map((budget) => {
+                const cat = categories.find((c) => c.id === budget.category_id);
+                const catBreakdown = analytics?.by_category.find((b) => b.category_id === budget.category_id);
+                const spent = catBreakdown?.spent_usd || 0;
+                const percentage = budget.limit_amount > 0 ? (spent / budget.limit_amount) * 100 : 0;
+                const status = percentage >= 100 ? "red" : percentage >= 80 ? "yellow" : "green";
+                const cfg = getStatusConfig(status);
 
-            return (
-              <div key={budget.id} className="bg-white border border-gray-200 rounded-xl p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <p className="font-medium text-gray-900">{cat?.name || "Sin categoría"}</p>
-                    <p className="text-sm text-gray-500">
-                      ${spent.toFixed(2)} / ${budget.limit_amount.toFixed(2)} USD
-                    </p>
+                return (
+                  <div key={budget.id}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold">{cat?.name || "Sin categoría"}</span>
+                      <span className={`badge ${cfg.class}`}>{percentage.toFixed(0)}%</span>
+                    </div>
+                    <div className="progress-bar">
+                      <div
+                        className={`progress-fill ${cfg.bar}`}
+                        style={{ width: `${Math.min(percentage, 100)}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-2" style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                      <span>${spent.toFixed(2)} gastado</span>
+                      <span>de ${budget.limit_amount.toFixed(2)} USD</span>
+                    </div>
                   </div>
-                  <span className={`text-sm font-semibold ${status === "red" ? "text-red-600" : status === "yellow" ? "text-yellow-600" : "text-green-600"}`}>
-                    {percentage.toFixed(0)}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div
-                    className={`h-2.5 rounded-full transition-all ${getStatusColor(status)}`}
-                    style={{ width: `${Math.min(percentage, 100)}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-          {budgets.length === 0 && (
-            <div className="text-center py-12 bg-white border border-gray-200 rounded-xl">
-              <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <p className="text-gray-500 font-medium">No hay presupuestos para este mes</p>
-              <p className="text-sm text-gray-400 mt-1">Define límites en Configuración</p>
+                );
+              })}
             </div>
           )}
         </div>
-      </div>
-    </AppLayout>
+      </main>
+    </div>
   );
 }

@@ -130,6 +130,8 @@ export default function CategoryBarsCard({ categories, totalExpenses, monthLabel
                       justifyContent: "space-between",
                       alignItems: "center",
                       marginBottom: 6,
+                      flexWrap: "wrap",
+                      gap: 4,
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

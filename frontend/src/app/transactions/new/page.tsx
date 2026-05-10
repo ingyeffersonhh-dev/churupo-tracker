@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import AppLayout from "@/components/AppLayout";
+import Sidebar from "@/components/Sidebar";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore, initAuth } from "@/store/auth";
 import { useRouter } from "next/navigation";
@@ -106,82 +106,120 @@ export default function NewTransactionPage() {
 
   if (success) {
     return (
-      <AppLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+      <div className="app-shell">
+        <Sidebar />
+        <main className="main-content">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ width: 80, height: 80, background: "rgba(0,204,102,0.2)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                <svg style={{ width: 40, height: 40, color: "var(--accent-green)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 style={{ fontSize: 20, fontWeight: 700 }}>¡Registrado!</h2>
+              <p style={{ color: "var(--text-secondary)", marginTop: 8 }}>Redirigiendo al dashboard...</p>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">¡Registrado!</h2>
-            <p className="text-gray-500 mt-2">Redirigiendo al dashboard...</p>
           </div>
-        </div>
-      </AppLayout>
+        </main>
+      </div>
     );
   }
 
   return (
-    <AppLayout>
-      <div className="p-4 md:p-6 max-w-lg mx-auto">
-        <div className="flex items-center mb-6">
-          <button onClick={() => router.back()} className="p-2 -ml-2 mr-2 rounded-lg hover:bg-gray-100 transition">
-            <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="app-shell">
+      <Sidebar />
+      <main className="main-content">
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 24 }}>
+          <button onClick={() => router.back()} style={{ padding: 8, borderRadius: 8, background: "var(--bg-sidebar)", border: "2px solid var(--border)", cursor: "pointer", marginRight: 8 }}>
+            <svg style={{ width: 24, height: 24, color: "var(--text-secondary)" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h1 className="text-xl font-bold text-gray-900">Nuevo {type === "expense" ? "Gasto" : "Ingreso"}</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 800, textTransform: "uppercase" }}>Nuevo {type === "expense" ? "Gasto" : "Ingreso"}</h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex bg-gray-100 rounded-lg p-1">
+        <form onSubmit={handleSubmit} style={{ maxWidth: 480, margin: "0 auto" }}>
+          <div style={{ display: "flex", background: "var(--bg-sidebar)", borderRadius: 8, padding: 4, marginBottom: 16 }}>
             <button
               type="button"
               onClick={() => setType("expense")}
-              className={`flex-1 py-2.5 rounded-md text-sm font-medium transition ${
-                type === "expense" ? "bg-white text-red-600 shadow-sm" : "text-gray-500"
-              }`}
+              style={{
+                flex: 1,
+                padding: "10px 16px",
+                borderRadius: 6,
+                fontWeight: 700,
+                fontSize: 14,
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                background: type === "expense" ? "var(--accent-red)" : "transparent",
+                color: type === "expense" ? "white" : "var(--text-secondary)",
+              }}
             >
               Gasto
             </button>
             <button
               type="button"
               onClick={() => setType("income")}
-              className={`flex-1 py-2.5 rounded-md text-sm font-medium transition ${
-                type === "income" ? "bg-white text-green-600 shadow-sm" : "text-gray-500"
-              }`}
+              style={{
+                flex: 1,
+                padding: "10px 16px",
+                borderRadius: 6,
+                fontWeight: 700,
+                fontSize: 14,
+                border: "none",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                background: type === "income" ? "var(--accent-green)" : "transparent",
+                color: type === "income" ? "var(--bg-main)" : "var(--text-secondary)",
+              }}
             >
               Ingreso
             </button>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex bg-gray-100 rounded-lg p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setCurrency("VES")}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${
-                    currency === "VES" ? "bg-white shadow-sm" : "text-gray-500"
-                  }`}
-                >
-                  VES
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrency("USD")}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${
-                    currency === "USD" ? "bg-white shadow-sm" : "text-gray-500"
-                  }`}
-                >
-                  USD
-                </button>
-              </div>
+          <div style={{ background: "var(--bg-card)", border: "2px solid var(--border)", borderRadius: 8, padding: 20, marginBottom: 16 }}>
+            <div style={{ display: "flex", background: "var(--bg-sidebar)", borderRadius: 8, padding: 4, marginBottom: 16 }}>
+              <button
+                type="button"
+                onClick={() => setCurrency("VES")}
+                style={{
+                  flex: 1,
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  border: "none",
+                  cursor: "pointer",
+                  background: currency === "VES" ? "var(--bg-card)" : "transparent",
+                  color: currency === "VES" ? "var(--text-main)" : "var(--text-secondary)",
+                  boxShadow: currency === "VES" ? "var(--shadow-solid-sm)" : "none",
+                }}
+              >
+                VES
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrency("USD")}
+                style={{
+                  flex: 1,
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  border: "none",
+                  cursor: "pointer",
+                  background: currency === "USD" ? "var(--bg-card)" : "transparent",
+                  color: currency === "USD" ? "var(--text-main)" : "var(--text-secondary)",
+                  boxShadow: currency === "USD" ? "var(--shadow-solid-sm)" : "none",
+                }}
+              >
+                USD
+              </button>
             </div>
 
-            <div className="text-right">
-              <span className="text-3xl text-gray-400">{currency === "VES" ? "Bs" : "$"}</span>
+            <div style={{ textAlign: "right" }}>
+              <span style={{ fontSize: 24, color: "var(--text-muted)", marginRight: 8 }}>{currency === "VES" ? "Bs" : "$"}</span>
               <input
                 ref={amountRef}
                 type="text"
@@ -192,29 +230,43 @@ export default function NewTransactionPage() {
                   if (/^\d*\.?\d*$/.test(val) && val.length <= 12) setAmount(val);
                 }}
                 placeholder="0.00"
-                className="text-4xl font-bold text-right bg-transparent outline-none w-full ml-2"
+                style={{
+                  fontSize: 40,
+                  fontWeight: 800,
+                  textAlign: "right",
+                  background: "transparent",
+                  outline: "none",
+                  width: "100%",
+                  color: "var(--text-main)",
+                }}
                 required
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5 md:hidden">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 16 }}>
             {numpadKeys.map((key) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => handleNumpad(key)}
-                className={`bg-white border border-gray-200 rounded-lg py-3.5 text-xl font-medium active:bg-gray-100 transition ${
-                  key === "back" ? "text-red-500" : ""
-                }`}
+                style={{
+                  background: "var(--bg-card)",
+                  border: "2px solid var(--border)",
+                  borderRadius: 8,
+                  padding: "14px 0",
+                  fontSize: 20,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  color: key === "back" ? "var(--accent-red)" : "var(--text-main)",
+                  transition: "all 0.2s",
+                }}
               >
                 {key === "back" ? (
-                  <svg className="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l2-2m0 0l-2-2m0 0l-2 2m0 0l2 2M9 12l.01 0M15 12l.01 0" />
+                  <svg style={{ width: 24, height: 24, margin: "0 auto" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l2-2m0 0l-2-2m2 2v-6m0 6l2-2m-2 2H9" />
                   </svg>
-                ) : (
-                  key
-                )}
+                ) : key}
               </button>
             ))}
           </div>
@@ -222,7 +274,8 @@ export default function NewTransactionPage() {
           <select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full px-3 py-3 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            className="form-select"
+            style={{ marginBottom: 12 }}
           >
             <option value="">Sin categoría</option>
             {categories.map((cat) => (
@@ -237,29 +290,38 @@ export default function NewTransactionPage() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Descripción (opcional)"
-            className="w-full px-3 py-3 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            className="form-input"
+            style={{ marginBottom: 12 }}
           />
 
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full px-3 py-3 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            className="form-input"
+            style={{ marginBottom: 16 }}
           />
 
           <button
             type="submit"
             disabled={submitting || !amount || parseFloat(amount) <= 0}
-            className={`w-full py-4 rounded-xl text-lg font-semibold text-white transition ${
-              type === "expense"
-                ? "bg-red-600 hover:bg-red-700 disabled:bg-red-300"
-                : "bg-green-600 hover:bg-green-700 disabled:bg-green-300"
-            } disabled:cursor-not-allowed`}
+            style={{
+              width: "100%",
+              padding: "16px 24px",
+              borderRadius: 8,
+              fontSize: 16,
+              fontWeight: 700,
+              border: "2px solid var(--border)",
+              cursor: "pointer",
+              color: "white",
+              background: type === "expense" ? "var(--accent-red)" : "var(--accent-green)",
+              opacity: (submitting || !amount || parseFloat(amount) <= 0) ? 0.5 : 1,
+            }}
           >
             {submitting ? "Guardando..." : `Registrar ${type === "expense" ? "Gasto" : "Ingreso"}`}
           </button>
         </form>
-      </div>
-    </AppLayout>
+      </main>
+    </div>
   );
 }

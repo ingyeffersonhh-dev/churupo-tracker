@@ -151,74 +151,72 @@ export default function ConfiguracionPage() {
           <div id="bot" className="card">
             <h2 className="text-lg font-bold mb-2">🤖 Bot de Telegram</h2>
             <p className="text-secondary text-sm mb-6">
-              Vincula tu cuenta de Telegram para registrar gastos desde el chat.
+              Vincula tu cuenta de Telegram para registrar gastos desde el chat en segundos.
             </p>
 
-            <div style={{ background: "var(--bg-secondary)", borderRadius: "var(--radius-lg)", padding: 24, border: "1px solid var(--border)" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                <div className="flex items-center gap-4">
-                  <div style={{ fontSize: 48 }}>📱</div>
+            <div style={{ background: "var(--bg-sidebar)", border: "2px solid var(--border)", padding: 32, position: "relative" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                <div className="flex items-center gap-4 mb-2">
+                  <div style={{ fontSize: 40, background: "var(--accent)", color: "var(--accent-text)", padding: 12, border: "2px solid var(--border)", boxShadow: "4px 4px 0px var(--border)" }}>📱</div>
                   <div>
-                    <div className="font-bold text-lg">Cómo vincular el bot</div>
-                    <div className="text-secondary text-sm" style={{ marginTop: 4 }}>Sigue estos pasos para empezar a usar el bot</div>
+                    <div className="font-bold text-xl uppercase italic">Cómo vincular el bot</div>
+                    <div className="text-secondary text-sm" style={{ fontWeight: 600 }}>Sigue estos pasos para activar el control por chat</div>
                   </div>
                 </div>
 
-                {[
-                  { n: "1", text: "Abre Telegram y busca el bot: @Churupo_Track_bot" },
-                  { n: "2", text: 'Haz clic en el botón de abajo o escribe /start para iniciar' },
-                  { n: "3", text: "Ingresa tu email y contraseña de esta aplicación cuando el bot lo solicite" },
-                  { n: "4", text: "¡Listo! Ya puedes registrar gastos escribiendo en lenguaje natural" },
-                ].map((step) => (
-                  <div key={step.n} className="flex gap-3 items-center">
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--grad-primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
-                      {step.n}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
+                  {[
+                    { n: "1", text: "Busca @Churupo_Track_bot en Telegram" },
+                    { n: "2", text: 'Presiona Iniciar o escribe /start' },
+                    { n: "3", text: "Usa tu email y clave para vincular" },
+                    { n: "4", text: "¡Envía gastos en lenguaje natural!" },
+                  ].map((step) => (
+                    <div key={step.n} style={{ border: "2px solid var(--border)", padding: 16, background: "var(--bg-main)", boxShadow: "3px 3px 0px var(--border)" }}>
+                      <div style={{ width: 28, height: 28, background: "var(--border)", color: "var(--bg-main)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, marginBottom: 12 }}>
+                        {step.n}
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase" }}>{step.text}</span>
                     </div>
-                    <span style={{ fontSize: 14, color: "var(--text-primary)" }}>{step.text}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
-              <div style={{ marginTop: 24, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ marginTop: 32, textAlign: "center" }}>
                 <a
                   href="https://t.me/Churupo_Track_bot"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-primary"
                   style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 10,
-                    padding: "12px 32px",
+                    padding: "16px 40px",
                     fontSize: 16,
-                    background: "#229ED9",
-                    border: "none",
+                    background: "#229ED9", /* Telegram Blue */
+                    color: "white",
                     width: "fit-content"
                   }}
                 >
-                  <span>✈️</span> Abrir @Churupo_Track_bot
+                  <span>✈️</span> ABRIR EN TELEGRAM
                 </a>
-                <div style={{ marginTop: 12, fontSize: 13, color: "var(--text-muted)" }}>
-                  Enlace directo: <a href="https://t.me/Churupo_Track_bot" style={{ color: "var(--accent-light)", textDecoration: "underline" }}>t.me/Churupo_Track_bot</a>
+                <div style={{ marginTop: 12, fontSize: 13, color: "var(--text-muted)", fontWeight: 600 }}>
+                  Enlace directo: <a href="https://t.me/Churupo_Track_bot" style={{ color: "var(--text-main)", textDecoration: "underline" }}>t.me/Churupo_Track_bot</a>
                 </div>
               </div>
             </div>
 
-            <div style={{ marginTop: 20, padding: "16px 20px", background: "rgba(99,102,241,0.08)", border: "1px solid var(--border-hover)", borderRadius: "var(--radius-md)" }}>
-              <div className="font-semibold mb-2">💡 Ejemplos de comandos del bot</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 13 }}>
+            <div style={{ marginTop: 24, padding: 24, border: "2px solid var(--border)", background: "var(--accent-light)" }}>
+              <div className="font-bold mb-4 uppercase italic">💡 Comandos Rápidos</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 16 }}>
                 {[
-                  ["Comida 15 USD", "Registra gasto de $15"],
-                  ["Gasolina 50000 VES", "Registra gasto en bolívares"],
-                  ["/presupuestos", "Ver estado de presupuestos"],
-                  ["/ultimos 10", "Ver últimas 10 transacciones"],
-                  ["/grafico", "Ver gráfico del mes (imagen)"],
-                  ["/tasa", "Ver tasa BCV actual"],
+                  ["Comida 15 USD", "Gasto de $15 en comida"],
+                  ["Gasolina 50000 VES", "Gasto en Bs. (Tasa automática)"],
+                  ["/presupuestos", "Estado de tus límites"],
+                  ["/ultimos 10", "Tus últimas transacciones"],
+                  ["/grafico", "Visualiza tu mes"],
+                  ["/tasa", "Tasa oficial BCV"],
                 ].map(([cmd, desc]) => (
-                  <div key={cmd}>
-                    <code style={{ color: "var(--accent-light)", fontSize: 12 }}>{cmd}</code>
-                    <div style={{ color: "var(--text-muted)", fontSize: 11 }}>{desc}</div>
+                  <div key={cmd} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--border-light)", paddingBottom: 8 }}>
+                    <code style={{ background: "var(--border)", color: "var(--bg-main)", padding: "2px 6px", fontWeight: 700 }}>{cmd}</code>
+                    <span style={{ color: "var(--text-secondary)", fontSize: 12, fontWeight: 600 }}>{desc}</span>
                   </div>
                 ))}
               </div>

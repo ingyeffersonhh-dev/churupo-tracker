@@ -6,7 +6,7 @@ echo ==============================================
 echo.
 
 echo [1/3] Iniciando el Servidor Backend (FastAPI)...
-start "Backend - Churupo Tracker" cmd /k "cd /d %~dp0backend && ..\venv\Scripts\python.exe -m uvicorn main:app --port 8000"
+start "Backend - Churupo Tracker" cmd /k "cd /d %~dp0backend && ..\venv\Scripts\python.exe -m uvicorn main:app --host 0.0.0.0 --port 8000"
 timeout /t 3 /nobreak > nul
 
 echo [2/3] Iniciando la Pagina Web (Next.js)...

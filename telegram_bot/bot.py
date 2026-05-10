@@ -8,6 +8,8 @@ Uso: python bot.py
 import logging
 import sys
 import os
+import threading
+from flask import Flask
 
 # Añadir el directorio del bot al path para imports relativos
 sys.path.insert(0, os.path.dirname(__file__))
@@ -24,12 +26,28 @@ from handlers.chart import chart_command
 from handlers.help import help_command
 from scheduler import setup_scheduler
 
+# Configuración de Flask para Render
+dummy_app = Flask(__name__)
+
+@dummy_app.route('/')
+def health_check():
+    return "Bot is alive!", 200
+
+@dummy_app.route('/health')
+def health_check_path():
+    return {"status": "ok"}, 200
+
+def run_flask():
+    # Render asigna el puerto en la variable PORT
+    port = int(os.environ.get("PORT", 8080))
+    dummy_app.run(host='0.0.0.0', port=port)
+
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s — %(message)s",
     level=logging.INFO,
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("bot.log", encoding="utf-8"),
+        # logging.FileHandler("bot.log", encoding="utf-8"), # Comentado para Render
     ],
 )
 logger = logging.getLogger(__name__)
@@ -44,6 +62,10 @@ async def post_init(application: Application) -> None:
 
 def main():
     logger.info("🤖 Iniciando Bot de Gastos Personales...")
+
+    # Iniciar servidor de salud en segundo plano para Render
+    threading.Thread(target=run_flask, daemon=True).start()
+    logger.info("✅ Servidor de salud iniciado para Render (Web Service)")
 
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).post_init(post_init).build()
 
