@@ -17,7 +17,7 @@ jobs:
       - name: Ping Backend
         run: |
           echo "Pinging backend..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://churupo-backend.onrender.com/health || echo "000")
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://churupo-backend.onrender.com/ || echo "000")
           echo "Backend response: $response"
 
       - name: Ping Bot

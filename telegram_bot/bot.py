@@ -79,18 +79,20 @@ def health():
     return jsonify({"status": "ok", "service": "telegram-bot", "mode": "webhook"}), 200
 
 
-def run_flask():
-    port = int(os.environ.get("PORT", 8080))
-    flask_app.run(host='0.0.0.0', port=port)
+def run_flask(port: int = 8081):
+    flask_app.run(host='0.0.0.0', port=port, debug=False)
 
 
 def main():
     logger.info("🤖 Iniciando Bot de Gastos Personales (Webhook)...")
 
-    # Iniciar Flask en thread secundario para health checks
+    port = int(os.environ.get("PORT", 8080))
+
+    # Flask corre en puerto diferente (8081) para health checks
     import threading
-    threading.Thread(target=run_flask, daemon=True).start()
-    logger.info("✅ Servidor de salud iniciado (Flask)")
+    flask_port = port + 1 if port < 65000 else port - 1
+    threading.Thread(target=run_flask, kwargs={'port': flask_port}, daemon=True).start()
+    logger.info(f"✅ Servidor de salud iniciado en puerto {flask_port}")
 
     app = (
         Application.builder()
@@ -109,8 +111,6 @@ def main():
     app.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_expense_text)
     )
-
-    port = int(os.environ.get("PORT", 8080))
 
     logger.info("✅ Bot activo — esperando mensajes vía webhook...")
     app.run_webhook(
