@@ -9,6 +9,7 @@ import logging
 import sys
 import os
 import threading
+import time
 from flask import Flask
 
 # Añadir el directorio del bot al path para imports relativos
@@ -60,6 +61,24 @@ async def post_init(application: Application) -> None:
     logger.info("✅ Scheduler iniciado")
 
 
+def run_bot():
+    """Crea la aplicación, registra handlers y retorna la app lista."""
+    app = Application.builder().token(TELEGRAM_BOT_TOKEN).post_init(post_init).build()
+
+    app.add_handler(get_start_conversation_handler())
+    app.add_handler(CommandHandler("ayuda", help_command))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("tasa", tasa_command))
+    app.add_handler(CommandHandler("presupuestos", budgets_command))
+    app.add_handler(CommandHandler("ultimos", transactions_command))
+    app.add_handler(CommandHandler("grafico", chart_command))
+    app.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_expense_text)
+    )
+
+    return app
+
+
 def main():
     logger.info("🤖 Iniciando Bot de Gastos Personales...")
 
@@ -67,29 +86,23 @@ def main():
     threading.Thread(target=run_flask, daemon=True).start()
     logger.info("✅ Servidor de salud iniciado para Render (Web Service)")
 
-    app = Application.builder().token(TELEGRAM_BOT_TOKEN).post_init(post_init).build()
+    # ── Loop de reconexión automática ─────────────────────────────────────────
+    RETRY_DELAY = 10  # segundos entre reintentos
 
-    # ── Handlers ─────────────────────────────────────────────────────────────
-    # Conversación de inicio (vinculación de cuenta)
-    app.add_handler(get_start_conversation_handler())
+    while True:
+        try:
+            app = run_bot()
+            logger.info("✅ Bot activo — escuchando mensajes...")
+            app.run_polling(
+                allowed_updates=["message", "callback_query"],
+                drop_pending_updates=True,
+            )
+        except Exception as e:
+            logger.error(f"⚠️ Bot desconectado: {e}. Reintentando en {RETRY_DELAY}s...")
+        else:
+            logger.warning(f"⚠️ run_polling terminó sin error. Reintentando en {RETRY_DELAY}s...")
 
-    # Comandos
-    app.add_handler(CommandHandler("ayuda", help_command))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("tasa", tasa_command))
-    app.add_handler(CommandHandler("presupuestos", budgets_command))
-    app.add_handler(CommandHandler("ultimos", transactions_command))
-    app.add_handler(CommandHandler("grafico", chart_command))
-
-    # Texto libre → intentar parsear como gasto
-    # Excluye comandos para que no entren en este handler
-    app.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_expense_text)
-    )
-
-    # ── Iniciar polling ───────────────────────────────────────────────────────
-    logger.info("✅ Bot activo — escuchando mensajes...")
-    app.run_polling(allowed_updates=["message", "callback_query"])
+        time.sleep(RETRY_DELAY)
 
 
 
