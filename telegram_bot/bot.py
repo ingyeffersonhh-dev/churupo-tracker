@@ -1,23 +1,17 @@
 """
 Bot de Telegram — Entry Point
-Inicia el bot con long polling + APScheduler para resúmenes automáticos.
-
-Uso: python bot.py
+Usa webhooks en vez de long polling para mayor estabilidad en Render.
 """
 
 import logging
 import sys
 import os
-import threading
-import time
-from flask import Flask
 
-# Añadir el directorio del bot al path para imports relativos
 sys.path.insert(0, os.path.dirname(__file__))
 
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
-from config import TELEGRAM_BOT_TOKEN
+from config import TELEGRAM_BOT_TOKEN, PUBLIC_URL, BOT_INTERNAL_SECRET
 from handlers.start import get_start_conversation_handler
 from handlers.expense import handle_expense_text
 from handlers.tasa import tasa_command
@@ -26,44 +20,55 @@ from handlers.transactions import transactions_command
 from handlers.chart import chart_command
 from handlers.help import help_command
 from scheduler import setup_scheduler
-
-# Configuración de Flask para Render
-dummy_app = Flask(__name__)
-
-@dummy_app.route('/')
-def health_check():
-    return "Bot is alive!", 200
-
-@dummy_app.route('/health')
-def health_check_path():
-    return {"status": "ok"}, 200
-
-def run_flask():
-    # Render asigna el puerto en la variable PORT
-    port = int(os.environ.get("PORT", 8080))
-    dummy_app.run(host='0.0.0.0', port=port)
+from apscheduler.triggers.interval import IntervalTrigger
 
 logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s — %(message)s",
     level=logging.INFO,
-    handlers=[
-        logging.StreamHandler(),
-        # logging.FileHandler("bot.log", encoding="utf-8"), # Comentado para Render
-    ],
+    handlers=[logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 
 
+async def verify_webhook(app: Application):
+    """Verifica que el webhook de Telegram siga configurado correctamente."""
+    webhook_url = f"{PUBLIC_URL.rstrip('/')}/webhook/{TELEGRAM_BOT_TOKEN}"
+    try:
+        info = await app.bot.get_webhook_info()
+        if info.url != webhook_url:
+            logger.warning("⚠️ Webhook cambiado, reconfigurando...")
+            await app.bot.set_webhook(
+                url=webhook_url,
+                secret_token=BOT_INTERNAL_SECRET,
+                allowed_updates=["message", "callback_query"],
+            )
+            logger.info("✅ Webhook reconfigurado")
+    except Exception as e:
+        logger.error(f"⚠️ Error verificando webhook: {e}")
+
+
 async def post_init(application: Application) -> None:
-    """Configura e inicia el scheduler una vez que el loop está corriendo."""
     scheduler = setup_scheduler(application)
+    scheduler.add_job(
+        verify_webhook,
+        trigger=IntervalTrigger(hours=1),
+        args=[application],
+        id="webhook_verification",
+        name="Webhook Health Check",
+    )
     scheduler.start()
     logger.info("✅ Scheduler iniciado")
 
 
-def run_bot():
-    """Crea la aplicación, registra handlers y retorna la app lista."""
-    app = Application.builder().token(TELEGRAM_BOT_TOKEN).post_init(post_init).build()
+def main():
+    logger.info("🤖 Iniciando Bot de Gastos Personales (Webhook)...")
+
+    app = (
+        Application.builder()
+        .token(TELEGRAM_BOT_TOKEN)
+        .post_init(post_init)
+        .build()
+    )
 
     app.add_handler(get_start_conversation_handler())
     app.add_handler(CommandHandler("ayuda", help_command))
@@ -76,34 +81,18 @@ def run_bot():
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_expense_text)
     )
 
-    return app
+    port = int(os.environ.get("PORT", 8080))
 
-
-def main():
-    logger.info("🤖 Iniciando Bot de Gastos Personales...")
-
-    # Iniciar servidor de salud en segundo plano para Render
-    threading.Thread(target=run_flask, daemon=True).start()
-    logger.info("✅ Servidor de salud iniciado para Render (Web Service)")
-
-    # ── Loop de reconexión automática ─────────────────────────────────────────
-    RETRY_DELAY = 10  # segundos entre reintentos
-
-    while True:
-        try:
-            app = run_bot()
-            logger.info("✅ Bot activo — escuchando mensajes...")
-            app.run_polling(
-                allowed_updates=["message", "callback_query"],
-                drop_pending_updates=True,
-            )
-        except Exception as e:
-            logger.error(f"⚠️ Bot desconectado: {e}. Reintentando en {RETRY_DELAY}s...")
-        else:
-            logger.warning(f"⚠️ run_polling terminó sin error. Reintentando en {RETRY_DELAY}s...")
-
-        time.sleep(RETRY_DELAY)
-
+    logger.info("✅ Bot activo — esperando mensajes vía webhook...")
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=port,
+        url_path=f"webhook/{TELEGRAM_BOT_TOKEN}",
+        webhook_url=f"{PUBLIC_URL.rstrip('/')}/webhook/{TELEGRAM_BOT_TOKEN}",
+        secret_token=BOT_INTERNAL_SECRET,
+        allowed_updates=["message", "callback_query"],
+        drop_pending_updates=True,
+    )
 
 
 if __name__ == "__main__":
