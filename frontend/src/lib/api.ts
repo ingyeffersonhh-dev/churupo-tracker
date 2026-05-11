@@ -1,7 +1,7 @@
 const getApiUrl = () => {
   if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
   if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
-    return `http://${window.location.hostname}:8000`;
+    return `https://churupo-backend.onrender.com`;
   }
   return "http://localhost:8000";
 };
@@ -9,7 +9,6 @@ const getApiUrl = () => {
 const API_URL = getApiUrl();
 
 async function fetchWithAuth(path: string, options: RequestInit = {}) {
-  // Obtener token de localStorage (guardado al hacer login)
   const token =
     typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
 
@@ -25,10 +24,11 @@ async function fetchWithAuth(path: string, options: RequestInit = {}) {
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
 
   if (res.status === 401) {
-    // Token expirado → redirigir a login
     if (typeof window !== "undefined") {
       localStorage.removeItem("access_token");
-      window.location.href = "/login";
+      const { supabase } = await import("@/lib/supabase");
+      await supabase.auth.signOut();
+      window.location.replace("/login");
     }
     throw new Error("Unauthorized");
   }

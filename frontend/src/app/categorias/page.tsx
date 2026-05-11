@@ -6,7 +6,12 @@ import { getCategories, createCategory, deleteCategory } from "@/lib/api";
 
 interface Category { id: string; name: string; type: string; icon?: string; }
 
-const ICONS = ["🛒","🍔","🚗","🏠","💊","🎓","🎮","✈️","👗","⚡","📱","💰","💼","🎁","🐾"];
+const ICONS = [
+  "🛒","🍔","🚗","🏠","💊","🎓","🎮","✈️","👗","⚡","📱","💰","💼","🎁","🐾",
+  "🏥","💡","📺","🛠️","🏋️","🎬","📚","🎵","🛒","🍕","☕","🍺","🛁","👶",
+  "💳","🏦","📈","🎯","🎲","🧹","🎂","🎊","🏨","🅿️","🚕","🚂","🚢","🛩️",
+  "📦","🎒","👠","💇","💅","🦷","👓","🪒","🧴","🧵","🎸","⚽","🏀","🎳","🎪"
+];
 
 export default function CategoriasPage() {
   const [cats, setCats] = useState<Category[]>([]);
@@ -90,7 +95,13 @@ export default function CategoriasPage() {
                     {items.map((c) => (
                       <div key={c.id} className="card flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <span style={{ fontSize: 28 }}>{c.icon || "📁"}</span>
+                          <span style={{ 
+                            fontSize: 28, 
+                            background: "var(--bg-card)", 
+                            borderRadius: "var(--radius-sm)",
+                            padding: "4px 8px",
+                            border: "1px solid var(--border)"
+                          }}>{c.icon || "📁"}</span>
                           <div>
                             <div className="font-semibold">{c.name}</div>
                             <span className={`badge ${c.type === "expense" ? "badge-red" : "badge-green"}`}>
@@ -137,17 +148,19 @@ export default function CategoriasPage() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Ícono</label>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 8, marginTop: 4 }}>
                     {ICONS.map((ic) => (
                       <button
                         key={ic}
                         type="button"
                         onClick={() => setIcon(ic)}
                         style={{
-                          fontSize: 22, width: 40, height: 40, borderRadius: "var(--radius-md)",
+                          fontSize: 22, width: "100%", aspectRatio: "1", borderRadius: "var(--radius-md)",
                           border: `2px solid ${icon === ic ? "var(--accent)" : "var(--border)"}`,
-                          background: icon === ic ? "rgba(99,102,241,0.15)" : "var(--bg-secondary)",
+                          background: icon === ic ? "var(--accent)" : "var(--bg-card)",
+                          color: icon === ic ? "white" : "inherit",
                           cursor: "pointer", transition: "var(--transition)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
                         }}
                       >
                         {ic}

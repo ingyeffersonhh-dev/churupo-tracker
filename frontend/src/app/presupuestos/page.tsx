@@ -28,15 +28,21 @@ export default function PresupuestosPage() {
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState("");
 
+  const [filterMonth, setFilterMonth] = useState(now.getMonth() + 1);
+  const [filterYear, setFilterYear] = useState(now.getFullYear());
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [bData, cData] = await Promise.all([getBudgets(), getCategories()]);
+      const [bData, cData] = await Promise.all([
+        getBudgets(filterMonth, filterYear),
+        getCategories()
+      ]);
       setBudgets(bData);
       setCats(cData);
     } catch (e: unknown) { console.error(e); }
     finally { setLoading(false); }
-  }, []);
+  }, [filterMonth, filterYear]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -64,9 +70,27 @@ export default function PresupuestosPage() {
             <h1 className="page-title">Presupuestos</h1>
             <p className="page-subtitle">Define límites de gasto por categoría</p>
           </div>
-          <button id="btn-new-budget" className="btn btn-primary" onClick={() => setShowModal(true)}>
-            + Nuevo Presupuesto
-          </button>
+          <div className="flex items-center gap-2">
+            <select
+              className="form-select"
+              style={{ width: "auto" }}
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(Number(e.target.value))}
+            >
+              {MONTHS.slice(1).map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
+            </select>
+            <select
+              className="form-select"
+              style={{ width: "auto" }}
+              value={filterYear}
+              onChange={(e) => setFilterYear(Number(e.target.value))}
+            >
+              {[2025, 2026, 2027].map((y) => <option key={y}>{y}</option>)}
+            </select>
+            <button id="btn-new-budget" className="btn btn-primary" onClick={() => setShowModal(true)}>
+              + Nuevo Presupuesto
+            </button>
+          </div>
         </div>
 
         {loading ? (

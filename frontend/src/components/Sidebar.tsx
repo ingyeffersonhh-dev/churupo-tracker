@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/presupuestos", label: "Presupuestos", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
   { href: "/categorias", label: "Categorías", icon: "M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" },
   { href: "/gastos-fijos", label: "Gastos Fijos", icon: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" },
+  { href: "/importar", label: "Importar", icon: "M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" },
   { href: "/configuracion", label: "Config", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z M15 12a3 3 0 11-6 0 3 3 0 016 0z" },
 ];
 
@@ -108,10 +109,27 @@ export default function Sidebar() {
       </aside>
 
       <header className="mobile-header">
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 0, paddingBottom: 0, borderBottom: "none" }}>
-          <span style={{ fontSize: 28 }}>💸</span>
-          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 16, textTransform: "uppercase", letterSpacing: "-0.03em" }}>Churupo</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ 
+            width: 36, height: 36, background: "var(--accent)", 
+            display: "flex", alignItems: "center", justifyContent: "center",
+            border: "2px solid var(--border)", boxShadow: "2px 2px 0px var(--border)"
+          }}>
+            <span style={{ fontSize: 20 }}>💸</span>
+          </div>
+          <span style={{ 
+            fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, 
+            textTransform: "uppercase", letterSpacing: "-0.02em", color: "var(--text-main)"
+          }}>Churupo</span>
         </div>
+
+        <button 
+          onClick={toggleTheme}
+          className="btn btn-ghost"
+          style={{ width: 40, height: 40, padding: 0, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
       </header>
 
       <nav className="mobile-bottom-nav">
@@ -139,6 +157,7 @@ function getEmojiForHref(href: string): string {
     "/presupuestos": "🎯",
     "/categorias": "🏷️",
     "/gastos-fijos": "🔄",
+    "/importar": "📤",
     "/configuracion": "⚙️",
   };
   return emojis[href] || "📌";
