@@ -168,3 +168,6 @@ export const downloadReport = async (format: "xlsx" | "pdf", month?: number, yea
   a.remove();
   window.URL.revokeObjectURL(url);
 };
+
+// ─── Exchange Rate ──────────────────────────────────────────────────────────────
+export const getExchangeRate = () => fetchWithAuth("/exchange-rate");

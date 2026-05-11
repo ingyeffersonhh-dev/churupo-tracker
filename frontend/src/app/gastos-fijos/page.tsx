@@ -7,6 +7,7 @@ import {
   deleteRecurringExpense,
   toggleRecurringExpense,
   getCategories,
+  getExchangeRate,
 } from "@/lib/api";
 import Sidebar from "@/components/Sidebar";
 
@@ -39,6 +40,7 @@ export default function GastosFijosPage() {
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
+  const [bcvRate, setBcvRate] = useState<number | null>(null);
 
   // Form state
   const [form, setForm] = useState({
@@ -53,12 +55,14 @@ export default function GastosFijosPage() {
     setLoading(true);
     setError("");
     try {
-      const [expData, catData] = await Promise.all([
+      const [expData, catData, rateData] = await Promise.all([
         getRecurringExpenses(),
         getCategories(),
+        getExchangeRate().catch(() => null),
       ]);
       setExpenses(expData);
       setCategories(catData.filter((c: Category) => c.type === "expense"));
+      if (rateData?.rate) setBcvRate(rateData.rate);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error cargando datos");
     } finally {
@@ -117,12 +121,11 @@ export default function GastosFijosPage() {
   };
 
   const activeExpenses = expenses.filter((e) => e.is_active);
-  const totalUSD = activeExpenses
-    .filter((e) => e.currency === "USD")
-    .reduce((sum, e) => sum + Number(e.amount), 0);
-  const totalVES = activeExpenses
-    .filter((e) => e.currency === "VES")
-    .reduce((sum, e) => sum + Number(e.amount), 0);
+  const totalUSD = activeExpenses.reduce((sum, e) => {
+    if (e.currency === "USD") return sum + Number(e.amount);
+    if (e.currency === "VES" && bcvRate) return sum + Number(e.amount) / bcvRate;
+    return sum;
+  }, 0);
 
   return (
     <div className="app-shell">
@@ -140,7 +143,7 @@ export default function GastosFijosPage() {
         </div>
 
         {/* Summary Card */}
-        <div className="stats-grid" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
+        <div className="stats-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
           <div className="stat-card">
             <div className="stat-label">Gastos Fijos Activos</div>
             <div className="stat-value text-accent">{activeExpenses.length}</div>
@@ -148,28 +151,18 @@ export default function GastosFijosPage() {
             <div className="stat-icon">🔄</div>
           </div>
           <div className="stat-card">
-            <div className="stat-label">Mensual USD</div>
+            <div className="stat-label">Total Mensual Estimado</div>
             <div className="stat-value text-red">{formatUSD(totalUSD)}</div>
-            <div className="stat-sub">Se registran automáticamente</div>
-            <div className="stat-icon">💵</div>
+            <div className="stat-sub">
+              {bcvRate ? `Tasa BCV: Bs. ${bcvRate.toLocaleString("de-DE")} / USD` : "Cargando tasa..."}
+            </div>
+            <div className="stat-icon">📅</div>
           </div>
           <div className="stat-card">
-            <div className="stat-label">Mensual VES</div>
-            <div className="stat-value text-yellow">Bs.{totalVES.toFixed(2)}</div>
-            <div className="stat-sub">Se registran automáticamente</div>
-            <div className="stat-icon">🇻🇪</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Anual USD</div>
-            <div className="stat-value text-red">{formatUSD(totalUSD * 12)}</div>
+            <div className="stat-label">Total Anual Estimado</div>
+            <div className="stat-value text-yellow">{formatUSD(totalUSD * 12)}</div>
             <div className="stat-sub">Proyección 12 meses</div>
             <div className="stat-icon">📊</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Anual VES</div>
-            <div className="stat-value text-yellow">Bs.{(totalVES * 12).toFixed(2)}</div>
-            <div className="stat-sub">Proyección 12 meses</div>
-            <div className="stat-icon">📈</div>
           </div>
         </div>
 
