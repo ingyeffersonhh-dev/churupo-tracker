@@ -1,0 +1,32 @@
+name: Keep Services Awake
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # Every 10 minutes
+  workflow_dispatch:        # Manual trigger
+  push:
+    branches:
+      - main
+
+jobs:
+  ping-services:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping Backend
+        run: |
+          echo "Pinging backend..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://churupo-backend.onrender.com/health || echo "000")
+          echo "Backend response: $response"
+
+      - name: Ping Bot
+        run: |
+          echo "Pinging bot..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://churupo-bot-wtql.onrender.com/health || echo "000")
+          echo "Bot response: $response"
+
+      - name: Summary
+        run: |
+          echo "✅ Keep-alive pings completed"
+          echo "This workflow runs every 10 minutes to prevent Render services from sleeping"
