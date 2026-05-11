@@ -131,10 +131,10 @@ export default function CategoriasPage() {
 
         {showModal && (
           <div className="modal-overlay" onClick={() => setShowModal(false)}>
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
               <h2 className="modal-title">Nueva Categoría</h2>
               <p className="modal-subtitle">Organiza tus finanzas con categorías</p>
-              <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", paddingRight: 4 }}>
                 <div className="form-group">
                   <label className="form-label">Nombre</label>
                   <input id="cat-name" type="text" className="form-input" placeholder="Ej: Alimentación" value={name} onChange={(e) => setName(e.target.value)} required />
