@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { getAnalyticsSummary, downloadReport } from "@/lib/api";
-import CategoryBarsCard from "@/components/CategoryBarsCard";
+import CategoryDonutChart from "@/components/CategoryDonutChart";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
 
@@ -319,7 +319,7 @@ export default function DashboardPage() {
             {/* Charts + Budgets row */}
             <div className="grid-2" style={{ gap: 24 }}>
               {/* Category Distribution */}
-              <CategoryBarsCard
+              <CategoryDonutChart
                 categories={barData}
                 totalExpenses={summary.total_expenses_usd}
                 monthLabel={`${MONTHS[month]} ${year}`}
