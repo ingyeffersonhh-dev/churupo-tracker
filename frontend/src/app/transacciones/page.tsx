@@ -407,11 +407,11 @@ export default function TransaccionesPage() {
         {/* ── Modal ─────────────────────────────────────────────────────── */}
         {showModal && (
           <div className="modal-overlay" onClick={() => setShowModal(false)}>
-            <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
               <h2 className="modal-title">Nueva Transacción</h2>
               <p className="modal-subtitle">Registra un gasto o ingreso manual</p>
 
-              <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", paddingRight: 4 }}>
                 <div className="grid-2">
                   <div className="form-group">
                     <label className="form-label">Monto</label>
