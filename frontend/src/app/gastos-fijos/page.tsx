@@ -116,9 +116,13 @@ export default function GastosFijosPage() {
     return cat ? cat.name : "Sin categoría";
   };
 
-  const totalMonthly = expenses
-    .filter((e) => e.is_active)
-    .reduce((sum, e) => sum + e.amount, 0);
+  const activeExpenses = expenses.filter((e) => e.is_active);
+  const totalUSD = activeExpenses
+    .filter((e) => e.currency === "USD")
+    .reduce((sum, e) => sum + Number(e.amount), 0);
+  const totalVES = activeExpenses
+    .filter((e) => e.currency === "VES")
+    .reduce((sum, e) => sum + Number(e.amount), 0);
 
   return (
     <div className="app-shell">
@@ -136,24 +140,36 @@ export default function GastosFijosPage() {
         </div>
 
         {/* Summary Card */}
-        <div className="stats-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+        <div className="stats-grid" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
           <div className="stat-card">
             <div className="stat-label">Gastos Fijos Activos</div>
-            <div className="stat-value text-accent">{expenses.filter((e) => e.is_active).length}</div>
+            <div className="stat-value text-accent">{activeExpenses.length}</div>
             <div className="stat-sub">de {expenses.length} totales</div>
             <div className="stat-icon">🔄</div>
           </div>
           <div className="stat-card">
-            <div className="stat-label">Total Mensual</div>
-            <div className="stat-value text-red">{formatUSD(totalMonthly)}</div>
+            <div className="stat-label">Mensual USD</div>
+            <div className="stat-value text-red">{formatUSD(totalUSD)}</div>
             <div className="stat-sub">Se registran automáticamente</div>
-            <div className="stat-icon">📅</div>
+            <div className="stat-icon">💵</div>
           </div>
           <div className="stat-card">
-            <div className="stat-label">Total Anual Estimado</div>
-            <div className="stat-value text-yellow">{formatUSD(totalMonthly * 12)}</div>
+            <div className="stat-label">Mensual VES</div>
+            <div className="stat-value text-yellow">Bs.{totalVES.toFixed(2)}</div>
+            <div className="stat-sub">Se registran automáticamente</div>
+            <div className="stat-icon">🇻🇪</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">Anual USD</div>
+            <div className="stat-value text-red">{formatUSD(totalUSD * 12)}</div>
             <div className="stat-sub">Proyección 12 meses</div>
             <div className="stat-icon">📊</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">Anual VES</div>
+            <div className="stat-value text-yellow">Bs.{(totalVES * 12).toFixed(2)}</div>
+            <div className="stat-sub">Proyección 12 meses</div>
+            <div className="stat-icon">📈</div>
           </div>
         </div>
 
