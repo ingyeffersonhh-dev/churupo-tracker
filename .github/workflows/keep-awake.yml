@@ -23,7 +23,7 @@ jobs:
       - name: Ping Bot
         run: |
           echo "Pinging bot..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://churupo-bot-wtql.onrender.com/health || echo "000")
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://churupo-bot-wtql.onrender.com/ || echo "000")
           echo "Bot response: $response"
 
       - name: Summary
