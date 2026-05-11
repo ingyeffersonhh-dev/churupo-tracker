@@ -6,6 +6,8 @@ Usa webhooks en vez de long polling para mayor estabilidad en Render.
 import logging
 import sys
 import os
+import asyncio
+from flask import Flask, jsonify
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -43,11 +45,16 @@ async def verify_webhook(app: Application):
                 allowed_updates=["message", "callback_query"],
             )
             logger.info("✅ Webhook reconfigurado")
+        else:
+            logger.info(f"✅ Webhook ya configurado: {webhook_url}")
     except Exception as e:
         logger.error(f"⚠️ Error verificando webhook: {e}")
 
 
 async def post_init(application: Application) -> None:
+    # Configurar webhook inmediatamente
+    await verify_webhook(application)
+    
     scheduler = setup_scheduler(application)
     scheduler.add_job(
         verify_webhook,
@@ -60,8 +67,30 @@ async def post_init(application: Application) -> None:
     logger.info("✅ Scheduler iniciado")
 
 
+# Flask app for health checks
+flask_app = Flask(__name__)
+
+@flask_app.route('/')
+def index():
+    return "Bot is alive!", 200
+
+@flask_app.route('/health')
+def health():
+    return jsonify({"status": "ok", "service": "telegram-bot", "mode": "webhook"}), 200
+
+
+def run_flask():
+    port = int(os.environ.get("PORT", 8080))
+    flask_app.run(host='0.0.0.0', port=port)
+
+
 def main():
     logger.info("🤖 Iniciando Bot de Gastos Personales (Webhook)...")
+
+    # Iniciar Flask en thread secundario para health checks
+    import threading
+    threading.Thread(target=run_flask, daemon=True).start()
+    logger.info("✅ Servidor de salud iniciado (Flask)")
 
     app = (
         Application.builder()
