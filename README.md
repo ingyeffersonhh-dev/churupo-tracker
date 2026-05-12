@@ -17,7 +17,6 @@
 8. [Base de Datos](#base-de-datos)
 9. [Despliegue en Producción](#despliegue-en-producción)
 10. [Variables de Entorno](#variables-de-entorno)
-11. [Hoja de Ruta — Ideas de Mejora](#hoja-de-ruta--ideas-de-mejora)
 
 ---
 
@@ -55,19 +54,20 @@ graph TB
     subgraph "Bot — Render"
         F["python-telegram-bot<br/>Long Polling"]
         G["APScheduler<br/>Resúmenes Automáticos"]
+        H["Flask<br/>Health Check"]
     end
 
     subgraph "Base de Datos — Supabase"
-        H["PostgreSQL"]
-        I["Auth (JWT)"]
+        I["PostgreSQL"]
+        J["Auth (JWT)"]
     end
 
     A -->|REST API + JWT| B
     F -->|REST API + Secret| B
-    B --> H
     B --> I
-    A --> I
-    D -->|Scrape BCV| J["bcv.org.ve"]
+    B --> J
+    A --> J
+    D -->|Scrape BCV| K["bcv.org.ve"]
     G -->|Cron Jobs| F
 ```
 
@@ -77,6 +77,10 @@ graph TB
 2. **Usuario Telegram** → Envía texto al bot → Bot llama al Backend con `x-bot-secret` → Backend parsea el texto con NLP → Guarda en PostgreSQL.
 3. **Scheduler** → A las 10pm cada día, el bot consulta el backend y envía resúmenes a todos los usuarios vinculados.
 
+### Keep-Alive
+
+Un workflow de **GitHub Actions** (`.github/workflows/keep-awake.yml`) pinguea cada 10 minutos los endpoints `/health` del backend y del bot para prevenir que Render duerma los servicios gratuitos por inactividad. Si el bot se cae por cualquier motivo, se reconecta automáticamente en 10 segundos.
+
 ---
 
 ## Funcionalidades
@@ -85,14 +89,13 @@ graph TB
 
 | Módulo | Descripción |
 |---|---|
-| **Dashboard** | Resumen mensual con total gastado, ingresos, balance y desglose por categoría con indicadores de semáforo (🟢🟡🔴). |
-| **Transacciones** | CRUD completo con filtros por fecha, categoría, moneda y fuente. Búsqueda por texto. |
-| **Categorías** | Crear/editar/eliminar categorías personalizadas con tipo (gasto o ingreso) e icono. |
-| **Presupuestos** | Asignar límites mensuales por categoría. Visualización de porcentaje consumido. |
-| **Configuración** | Reglas de auto-categorización por comercio (merchant rules). |
-| **Importación CSV** | Carga masiva de transacciones desde archivos CSV. |
+| **Dashboard** | Resumen mensual con total gastado, ingresos, balance, desglose por categoría con indicadores de semáforo (🟢🟡🔴) y **gráfico de dona interactivo** (Recharts). |
+| **Transacciones** | CRUD completo con filtros por fecha, categoría, moneda y fuente. Búsqueda por texto. Modal con scroll. |
+| **Categorías** | Crear/editar/eliminar categorías personalizadas con tipo (gasto o ingreso) e icono. Modal con 48+ iconos en grilla de 8 columnas. |
+| **Presupuestos** | Asignar límites mensuales por categoría. Visualización de porcentaje consumido. Filtro por mes/año. Modal con scroll. |
+| **Gastos Fijos** | Vista de gastos recurrentes con conversión VES→USD usando tasa BCV en vivo. Tarjetas separadas USD/VES/total. |
 | **Modo Claro/Oscuro** | Toggle de tema visual. |
-| **Autenticación** | Registro e inicio de sesión con email/contraseña vía Supabase Auth. |
+| **Autenticación** | Registro e inicio de sesión con email/contraseña vía Supabase Auth. Redirección post-login sin errores de token. |
 
 ### 🤖 Bot de Telegram
 
@@ -137,16 +140,20 @@ Detecta automáticamente: `$`, `USD`, `dólares`, `VES`, `Bs`, `bolívares` y va
 |---|---|---|
 | **Frontend** | Next.js (App Router) | 15.x |
 | **Estilos** | CSS custom (globals.css) | — |
+| **Gráficos** | Recharts | — |
 | **Backend** | FastAPI | 0.115.x |
 | **Lenguaje Backend** | Python | 3.11+ |
 | **Base de Datos** | PostgreSQL (Supabase) | 15.x |
 | **Autenticación** | Supabase Auth (JWT) | — |
-| **Bot** | python-telegram-bot | 21.x |
+| **Bot** | python-telegram-bot (long polling) | 21.x |
 | **Scheduler** | APScheduler | 3.10.x |
 | **Scraping** | httpx + BeautifulSoup | — |
-| **Gráficos** | matplotlib | — |
+| **Gráficos PNG** | matplotlib | — |
+| **Health Check** | Flask | 3.x |
 | **Hosting Frontend** | Vercel | — |
 | **Hosting Backend** | Render | — |
+| **Hosting Bot** | Render | — |
+| **Keep-Alive** | GitHub Actions (cron */10) | — |
 
 ---
 
@@ -155,21 +162,20 @@ Detecta automáticamente: `$`, `USD`, `dólares`, `VES`, `Bs`, `bolívares` y va
 ```
 churupo-tracker/
 ├── backend/                    # API FastAPI
-│   ├── main.py                 # Entry point + CORS
+│   ├── main.py                 # Entry point + CORS + /exchange-rate
 │   ├── config.py               # Pydantic Settings
 │   ├── dependencies.py         # Auth middleware (JWT)
 │   ├── supabase_client.py      # Conexión a Supabase
 │   ├── routers/
 │   │   ├── analytics.py        # GET /analytics/summary
 │   │   ├── bot_internal.py     # POST /bot/* (autenticado con secret)
-│   │   ├── budgets.py          # CRUD /budgets/
+│   │   ├── budgets.py          # CRUD /budgets/ (con filtro mes/año)
 │   │   ├── categories.py       # CRUD /categories/
 │   │   ├── merchant_rules.py   # CRUD /merchant-rules/
 │   │   └── transactions.py     # CRUD /transactions/
 │   ├── services/
 │   │   ├── bcv_scraper.py      # Scraping tasa BCV
 │   │   ├── chart_generator.py  # Genera gráficos PNG
-│   │   ├── csv_processor.py    # Procesa archivos CSV
 │   │   ├── database.py         # Helpers de DB
 │   │   └── nlp_parser.py       # Parser de lenguaje natural
 │   ├── schemas/                # Pydantic models
@@ -178,24 +184,28 @@ churupo-tracker/
 ├── frontend/                   # Next.js 15
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── dashboard/      # Panel principal
+│   │   │   ├── dashboard/      # Panel principal (donut chart)
 │   │   │   ├── transacciones/  # Lista de transacciones
 │   │   │   ├── categorias/     # Gestión de categorías
 │   │   │   ├── presupuestos/   # Gestión de presupuestos
-│   │   │   ├── configuracion/  # Merchant rules
+│   │   │   ├── gastos-fijos/   # Gastos recurrentes + BCV rate
 │   │   │   ├── login/          # Inicio de sesión
-│   │   │   ├── register/       # Registro
-│   │   │   └── import/         # Importación CSV
+│   │   │   └── register/       # Registro
 │   │   ├── components/         # Componentes reutilizables
+│   │   │   ├── Sidebar.tsx
+│   │   │   ├── ThemeToggle.tsx
+│   │   │   ├── CategoryDonutChart.tsx
+│   │   │   └── ...
 │   │   └── lib/
-│   │       ├── api.ts          # Cliente HTTP con auth
+│   │       ├── api.ts          # Cliente HTTP con auth + 401 handler
 │   │       └── supabase.ts     # Cliente Supabase
+│   ├── middleware.ts            # Protección de rutas
 │   ├── vercel.json             # Configuración de despliegue
 │   ├── next.config.ts
 │   └── package.json
 │
 ├── telegram_bot/               # Bot de Telegram
-│   ├── bot.py                  # Entry point
+│   ├── bot.py                  # Entry point (polling + Flask health)
 │   ├── config.py               # Variables de entorno
 │   ├── api_client.py           # Cliente HTTP al backend
 │   ├── scheduler.py            # Resúmenes automáticos
@@ -210,6 +220,8 @@ churupo-tracker/
 │   └── requirements.txt
 │
 ├── supabase/                   # Migraciones y config
+├── .github/workflows/
+│   └── keep-awake.yml          # Ping a backend y bot cada 10 min
 ├── iniciar_proyecto.bat        # Script para dev local
 └── iniciar_bot.bat             # Script para bot local
 ```
@@ -224,6 +236,11 @@ churupo-tracker/
 | Método | Ruta | Descripción |
 |---|---|---|
 | `GET` | `/health` | Estado del servidor. Retorna `{"status": "ok"}` |
+
+### Tasa de Cambio
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/exchange-rate` | Tasa BCV actual (requiere JWT). |
 
 ### Transacciones (`/transactions/`)
 | Método | Ruta | Descripción |
@@ -275,6 +292,10 @@ churupo-tracker/
 ---
 
 ## Bot de Telegram
+
+El bot funciona con **long polling** en vez de webhooks para evitar conflictos de puertos en Render. Un servidor Flask integrado corre en el mismo `$PORT` exclusivamente para health checks y mantener el servicio despierto.
+
+Si el polling falla (timeout, desconexión), el bot se reconecta automáticamente tras 10 segundos.
 
 ### Flujo de Vinculación
 
@@ -420,9 +441,12 @@ erDiagram
 | Configuración | Valor |
 |---|---|
 | **Tipo** | Web Service |
-| **Root Directory** | `telegram_bot` |
-| **Build Command** | `pip install -r requirements.txt` |
-| **Start Command** | `python -m http.server $PORT & python bot.py` |
+| **Root Directory** | *(vacío — usar la raíz del repo)* |
+| **Build Command** | `pip install -r telegram_bot/requirements.txt` |
+| **Start Command** | `python telegram_bot/bot.py` |
+| **URL** | `https://churupo-bot-wtql.onrender.com` |
+
+> **Nota**: El bot usa long polling con Flask integrado para health checks en `$PORT`. No requiere `PUBLIC_URL` ni configuración de webhook.
 
 ---
 
@@ -455,80 +479,8 @@ erDiagram
 | `BACKEND_URL` | URL del backend | `https://churupo-backend.onrender.com` |
 | `BOT_INTERNAL_SECRET` | Debe coincidir con el del backend | `changeme-super-secret-key` |
 
----
-
-## Hoja de Ruta — Ideas de Mejora
-
-### 🔴 Prioridad Alta (Impacto inmediato)
-
-#### 1. Gastos Recurrentes Automáticos
-Permitir que el usuario defina gastos fijos mensuales (Netflix, alquiler, internet) que se registren automáticamente el día configurado.
-- **Impacto**: Reduce fricción del usuario y aumenta precisión del tracking.
-
-#### 2. Exportar a Excel/PDF
-Botón en el Dashboard para descargar reporte mensual en `.xlsx` o `.pdf` con desglose por categoría, gráficos y totales.
-- **Impacto**: Útil para contabilidad personal, declaraciones o simplemente archivo.
-
-#### 3. Edición de Transacciones desde el Frontend
-Actualmente solo se puede crear y eliminar. Falta un botón de **editar** para corregir montos, descripciones o categorías.
-- **Impacto**: Funcionalidad básica que todo CRUD necesita.
-
-#### 4. Cambiar el `BOT_INTERNAL_SECRET`
-El secreto actual es el valor por defecto (`changeme-super-secret-key`). Cambiarlo a un UUID o string aleatorio largo en ambos servicios.
-- **Impacto**: Seguridad crítica en producción.
+> El bot **no** necesita `PUBLIC_URL` — funciona vía long polling.
 
 ---
 
-### 🟡 Prioridad Media (Experiencia de usuario)
-
-#### 5. Notificaciones Push en el Frontend
-Cuando un presupuesto supere el 80%, mostrar una notificación en el panel web (banner o toast).
-- **Impacto**: El usuario no siempre revisa Telegram; las alertas en la web complementan.
-
-#### 6. Gráficos Interactivos en el Dashboard
-Reemplazar la tabla de categorías por gráficos de dona/pie interactivos con librerías como **Recharts** o **Chart.js**.
-- **Impacto**: Mucho más visual y atractivo.
-
-#### 7. Multi-Idioma (i18n)
-Agregar soporte para inglés además de español. El bot podría detectar el idioma del usuario.
-- **Impacto**: Amplía la base de usuarios potenciales.
-
-#### 8. Fotos de Recibos
-Permitir al usuario enviar una **foto de un recibo** por Telegram, procesarla con OCR (Tesseract o Google Vision) y extraer automáticamente el monto y descripción.
-- **Impacto**: Caso de uso muy solicitado — "fotografía y olvídate".
-
-#### 9. Objetivos de Ahorro
-Crear un módulo donde el usuario defina una meta (ej: *"Ahorrar $500 para vacaciones"*) y el sistema muestre el progreso automáticamente basado en ingresos vs gastos.
-- **Impacto**: Gamificación y motivación para el ahorro.
-
-#### 10. Historial de Tasa BCV
-Guardar un registro diario de la tasa BCV y mostrar un gráfico de evolución en el Dashboard. Útil para entender tendencias de devaluación.
-- **Impacto**: Información valiosa para contexto económico.
-
----
-
-### 🟢 Prioridad Baja (Nice-to-have)
-
-#### 11. App Móvil Nativa (React Native)
-Crear una versión móvil con acceso a la cámara (para recibos), notificaciones push nativas y geolocalización para auto-detectar el comercio.
-- **Impacto**: Experiencia premium, pero alto esfuerzo de desarrollo.
-
-#### 12. Inteligencia Artificial Predictiva
-Usar los datos históricos para predecir gastos futuros del mes, alertando al usuario: *"Según tu patrón, este mes gastarás ~$450 USD, un 15% más que el mes pasado"*.
-- **Impacto**: Diferenciador frente a otras apps de finanzas.
-
-#### 13. Compartir Presupuesto Familiar
-Permitir que dos o más usuarios compartan categorías y presupuestos (ej: parejas o familias).
-- **Impacto**: Caso de uso real para hogares venezolanos donde ambos aportan.
-
-#### 14. Integración con Bancos (Open Banking)
-Conectar con APIs bancarias (cuando estén disponibles en Venezuela) para importar transacciones automáticamente.
-- **Impacto**: Eliminaría completamente la entrada manual.
-
-#### 15. PWA (Progressive Web App)
-Hacer que el frontend funcione offline y pueda instalarse en el teléfono como app nativa.
-- **Impacto**: Acceso rápido sin descargar nada de una tienda.
-
----
-
-> **Nota**: Esta documentación fue generada el 9 de mayo de 2026. Para la versión más actualizada del código, consultar el repositorio en GitHub: `github.com/ingyeffersonhh-dev/churupo-tracker`.
+> **Nota**: Esta documentación fue generada el 12 de mayo de 2026. Para la versión más actualizada del código, consultar el repositorio en GitHub: `github.com/ingyeffersonhh-dev/churupo-tracker`.

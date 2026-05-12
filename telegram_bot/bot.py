@@ -1,20 +1,18 @@
 """
 Bot de Telegram — Entry Point
-Usa long polling con reconexión automática + Flask en $PORT para health checks.
-Sin webhooks — evita conflictos de puerto y dependencias extra.
+Modo Webhooks sobre $PORT. Las actualizaciones llegan desde Telegram
+como tráfico entrante, manteniendo el servicio activo en Render.
 """
 
 import logging
 import sys
 import os
-import threading
 import time
-from flask import Flask, jsonify
 
 sys.path.insert(0, os.path.dirname(__file__))
 
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
-from config import TELEGRAM_BOT_TOKEN
+from config import TELEGRAM_BOT_TOKEN, BACKEND_URL, BOT_INTERNAL_SECRET
 from handlers.start import get_start_conversation_handler
 from handlers.expense import handle_expense_text
 from handlers.tasa import tasa_command
@@ -25,56 +23,26 @@ from handlers.help import help_command
 from scheduler import setup_scheduler
 
 logging.basicConfig(
-    format="%(asctime)s | %(levelname)s | %(name)s \u2014 %(message)s",
+    format="%(asctime)s | %(levelname)s | %(name)s — %(message)s",
     level=logging.INFO,
     handlers=[logging.StreamHandler()],
 )
 logger = logging.getLogger(__name__)
 
-
-# Flask app for health checks \u2014 runs on $PORT so Render sees it as alive
-flask_app = Flask(__name__)
-
-@flask_app.route('/')
-@flask_app.route('/health')
-def health():
-    return jsonify({"status": "ok", "service": "telegram-bot", "mode": "polling"}), 200
-
-
-def run_flask(port: int):
-    flask_app.run(host='0.0.0.0', port=port, debug=False)
-
-
-async def delete_webhook(app: Application):
-    """Elimina cualquier webhook previo para que polling funcione."""
-    try:
-        info = await app.bot.get_webhook_info()
-        if info.url:
-            logger.info(f"Eliminando webhook existente: {info.url}")
-            await app.bot.delete_webhook(drop_pending_updates=True)
-            logger.info("Webhook eliminado correctamente")
-        else:
-            logger.info("No hay webhook que eliminar")
-    except Exception as e:
-        logger.warning(f"No se pudo verificar/eliminar webhook: {e}")
+WEBHOOK_URL = f"https://churupo-bot-wtql.onrender.com/webhook/{TELEGRAM_BOT_TOKEN}"
 
 
 async def post_init(application: Application) -> None:
-    await delete_webhook(application)
-
+    """Configura el scheduler. El webhook lo establece run_webhook automáticamente."""
     scheduler = setup_scheduler(application)
     scheduler.start()
-    logger.info("Scheduler iniciado")
+    logger.info("Scheduler activo — resúmenes diarios/semanales/mensuales listos")
 
 
 def main():
-    logger.info("Iniciando Bot de Gastos Personales (Polling)...")
+    logger.info("Iniciando Bot de Gastos Personales (Webhook)...")
 
     port = int(os.environ.get("PORT", 8080))
-
-    # Flask en $PORT para health checks (mantiene Render despierto)
-    threading.Thread(target=run_flask, kwargs={'port': port}, daemon=True).start()
-    logger.info(f"Servidor de salud iniciado en puerto {port}")
 
     while True:
         try:
@@ -96,14 +64,19 @@ def main():
                 MessageHandler(filters.TEXT & ~filters.COMMAND, handle_expense_text)
             )
 
-            logger.info("Bot activo \u2014 esperando mensajes via polling...")
-            app.run_polling(
+            logger.info(f"Bot activo — webhook en puerto {port}")
+            app.run_webhook(
+                listen="0.0.0.0",
+                port=port,
+                url_path=f"webhook/{TELEGRAM_BOT_TOKEN}",
+                webhook_url=WEBHOOK_URL,
+                secret_token=BOT_INTERNAL_SECRET,
                 allowed_updates=["message", "callback_query"],
                 drop_pending_updates=True,
             )
 
         except Exception as e:
-            logger.error(f"Error en bot: {e}. Reconectando en 10 segundos...")
+            logger.error(f"Error en el bot: {e}. Reconectando en 10s...")
             time.sleep(10)
 
 
