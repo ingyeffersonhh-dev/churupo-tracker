@@ -26,6 +26,8 @@ async function fetchWithAuth(path: string, options: RequestInit = {}) {
   if (res.status === 401) {
     if (typeof window !== "undefined") {
       localStorage.removeItem("access_token");
+      document.cookie =
+        "sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       const { supabase } = await import("@/lib/supabase");
       await supabase.auth.signOut();
       window.location.replace("/login");

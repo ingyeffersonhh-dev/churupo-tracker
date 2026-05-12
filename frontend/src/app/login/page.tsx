@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import React, { useState, FormEvent, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  // Limpiar cookies residuales al cargar la página de login
+  useEffect(() => {
+    document.cookie = "sb-access-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    localStorage.removeItem("access_token");
+  }, []);
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
