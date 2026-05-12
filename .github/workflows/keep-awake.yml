@@ -16,17 +16,16 @@ jobs:
     steps:
       - name: Ping Backend
         run: |
-          echo "Pinging backend..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://churupo-backend.onrender.com/ || echo "000")
+          echo "Pinging backend /health..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://churupo-backend.onrender.com/health || echo "000")
           echo "Backend response: $response"
 
       - name: Ping Bot
         run: |
-          echo "Pinging bot..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://churupo-bot-wtql.onrender.com/ || echo "000")
+          echo "Pinging bot /health..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://churupo-bot-wtql.onrender.com/health || echo "000")
           echo "Bot response: $response"
 
       - name: Summary
         run: |
-          echo "✅ Keep-alive pings completed"
-          echo "This workflow runs every 10 minutes to prevent Render services from sleeping"
+          echo "Keep-alive pings completed"
