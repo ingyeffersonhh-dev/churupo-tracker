@@ -1,13 +1,12 @@
 """
 Bot de Telegram — Entry Point
-Modo Webhooks sobre $PORT. Las actualizaciones llegan desde Telegram
+Modo Webhook sobre $PORT. Las actualizaciones llegan desde Telegram
 como tráfico entrante, manteniendo el servicio activo en Render.
 """
 
 import logging
 import sys
 import os
-import asyncio
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -33,52 +32,46 @@ WEBHOOK_URL = f"https://churupo-bot-wtql.onrender.com/webhook/{TELEGRAM_BOT_TOKE
 
 
 async def post_init(application: Application) -> None:
-    """Configura el scheduler. El webhook lo establece run_webhook automáticamente."""
+    """Configura el scheduler."""
     scheduler = setup_scheduler(application)
     scheduler.start()
     logger.info("Scheduler activo — resúmenes diarios/semanales/mensuales listos")
 
 
-async def main():
+def main():
     logger.info("Iniciando Bot de Gastos Personales (Webhook)...")
 
     port = int(os.environ.get("PORT", 8080))
 
-    while True:
-        try:
-            app = (
-                Application.builder()
-                .token(TELEGRAM_BOT_TOKEN)
-                .post_init(post_init)
-                .build()
-            )
+    app = (
+        Application.builder()
+        .token(TELEGRAM_BOT_TOKEN)
+        .post_init(post_init)
+        .build()
+    )
 
-            app.add_handler(get_start_conversation_handler())
-            app.add_handler(CommandHandler("ayuda", help_command))
-            app.add_handler(CommandHandler("help", help_command))
-            app.add_handler(CommandHandler("tasa", tasa_command))
-            app.add_handler(CommandHandler("presupuestos", budgets_command))
-            app.add_handler(CommandHandler("ultimos", transactions_command))
-            app.add_handler(CommandHandler("grafico", chart_command))
-            app.add_handler(
-                MessageHandler(filters.TEXT & ~filters.COMMAND, handle_expense_text)
-            )
+    app.add_handler(get_start_conversation_handler())
+    app.add_handler(CommandHandler("ayuda", help_command))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("tasa", tasa_command))
+    app.add_handler(CommandHandler("presupuestos", budgets_command))
+    app.add_handler(CommandHandler("ultimos", transactions_command))
+    app.add_handler(CommandHandler("grafico", chart_command))
+    app.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_expense_text)
+    )
 
-            logger.info(f"Bot activo — webhook en puerto {port}")
-            await app.run_webhook(
-                listen="0.0.0.0",
-                port=port,
-                url_path=f"webhook/{TELEGRAM_BOT_TOKEN}",
-                webhook_url=WEBHOOK_URL,
-                secret_token=BOT_INTERNAL_SECRET,
-                allowed_updates=["message", "callback_query"],
-                drop_pending_updates=True,
-            )
-
-        except Exception as e:
-            logger.error(f"Error en el bot: {e}. Reconectando en 10s...")
-            await asyncio.sleep(10)
+    logger.info(f"Bot activo — webhook en puerto {port}")
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=port,
+        url_path=f"webhook/{TELEGRAM_BOT_TOKEN}",
+        webhook_url=WEBHOOK_URL,
+        secret_token=BOT_INTERNAL_SECRET,
+        allowed_updates=["message", "callback_query"],
+        drop_pending_updates=True,
+    )
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
