@@ -7,7 +7,7 @@ como tráfico entrante, manteniendo el servicio activo en Render.
 import logging
 import sys
 import os
-import time
+import asyncio
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -39,7 +39,7 @@ async def post_init(application: Application) -> None:
     logger.info("Scheduler activo — resúmenes diarios/semanales/mensuales listos")
 
 
-def main():
+async def main():
     logger.info("Iniciando Bot de Gastos Personales (Webhook)...")
 
     port = int(os.environ.get("PORT", 8080))
@@ -65,7 +65,7 @@ def main():
             )
 
             logger.info(f"Bot activo — webhook en puerto {port}")
-            app.run_webhook(
+            await app.run_webhook(
                 listen="0.0.0.0",
                 port=port,
                 url_path=f"webhook/{TELEGRAM_BOT_TOKEN}",
@@ -77,8 +77,8 @@ def main():
 
         except Exception as e:
             logger.error(f"Error en el bot: {e}. Reconectando en 10s...")
-            time.sleep(10)
+            await asyncio.sleep(10)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
