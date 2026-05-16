@@ -192,7 +192,7 @@ async def process_recurring_expenses(app: Application):
             logger.debug("No recurring expenses to process today")
 
     except Exception as e:
-        logger.error(f"Error processing recurring expenses: {e")
+        logger.error(f"Error processing recurring expenses: {e}")
 
 
 async def update_bcv_rate(app: Application):
