@@ -7,6 +7,9 @@ como tráfico entrante, manteniendo el servicio activo en Render.
 import logging
 import sys
 import os
+import threading
+
+from flask import Flask, jsonify
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -30,6 +33,24 @@ logger = logging.getLogger(__name__)
 
 WEBHOOK_URL = f"https://churupo-bot-wtql.onrender.com/webhook/{TELEGRAM_BOT_TOKEN}"
 
+flask_app = Flask(__name__)
+
+
+@flask_app.route("/")
+@flask_app.route("/health")
+def health_check():
+    return jsonify({"status": "ok", "message": "Bot funcionando"})
+
+
+def run_flask_server():
+    flask_app.run(host="0.0.0.0", port=8081)
+
+
+def start_flask_server():
+    thread = threading.Thread(target=run_flask_server, daemon=True)
+    thread.start()
+    logger.info("Servidor Flask de salud iniciado en puerto 8081")
+
 
 async def post_init(application: Application) -> None:
     """Configura el scheduler."""
@@ -40,6 +61,8 @@ async def post_init(application: Application) -> None:
 
 def main():
     logger.info("Iniciando Bot de Gastos Personales (Webhook)...")
+
+    start_flask_server()
 
     port = int(os.environ.get("PORT", 8080))
 
