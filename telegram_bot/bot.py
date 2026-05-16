@@ -102,7 +102,6 @@ def main():
         port=port,
         url_path=f"webhook/{TELEGRAM_BOT_TOKEN}",
         webhook_url=WEBHOOK_URL,
-        secret_token=BOT_INTERNAL_SECRET,
         allowed_updates=["message", "callback_query"],
         drop_pending_updates=True,
     )
