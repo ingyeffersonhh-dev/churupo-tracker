@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Sidebar from "@/components/Sidebar";
-import { getTransactions, createTransaction, deleteTransaction, getCategories } from "@/lib/api";
+import { getTransactions, createTransaction, deleteTransaction, updateTransaction, getCategories } from "@/lib/api";
 
 interface Transaction {
   id: string;
@@ -35,6 +35,7 @@ export default function TransaccionesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
 
   // ── Filters ──────────────────────────────────────────────────────────────
   const [search,     setSearch]     = useState("");
@@ -83,6 +84,7 @@ export default function TransaccionesPage() {
         transaction_date: new Date(txDate).toISOString(),
       });
       setShowModal(false);
+      setEditingTx(null);
       setAmount(""); setDescription(""); setCategoryId(""); setCurrency("USD");
       await load();
     } catch (e: unknown) {
@@ -100,6 +102,40 @@ export default function TransaccionesPage() {
     } catch (e: unknown) {
       console.error(e);
     }
+  }
+
+  async function handleUpdate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingTx) return;
+    setFormLoading(true);
+    setFormError("");
+    try {
+      await updateTransaction(editingTx.id, {
+        amount: parseFloat(amount),
+        currency,
+        description,
+        category_id: categoryId || undefined,
+        transaction_date: new Date(txDate).toISOString(),
+      });
+      setEditingTx(null);
+      setShowModal(false);
+      setAmount(""); setDescription(""); setCategoryId(""); setCurrency("USD");
+      await load();
+    } catch (e: unknown) {
+      setFormError(e instanceof Error ? e.message : "Error al actualizar");
+    } finally {
+      setFormLoading(false);
+    }
+  }
+
+  function openEditModal(tx: Transaction) {
+    setEditingTx(tx);
+    setAmount(String(tx.amount));
+    setCurrency(tx.currency);
+    setDescription(tx.description || "");
+    setCategoryId(tx.category_id || "");
+    setTxDate(tx.transaction_date.slice(0, 16));
+    setShowModal(true);
   }
 
   function resetFilters() {
@@ -386,16 +422,26 @@ export default function TransaccionesPage() {
                       <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
                         <span className="text-muted text-xs">{SOURCE_LABELS[tx.source] || tx.source}</span>
                       </td>
-                      <td style={{ textAlign: "right" }}>
-                        <button
-                          id={`btn-delete-${tx.id}`}
-                          className="btn btn-danger btn-sm btn-icon"
-                          onClick={() => handleDelete(tx.id)}
-                          title="Eliminar"
-                        >
-                          🗑️
-                        </button>
-                      </td>
+                       <td style={{ textAlign: "right" }}>
+                         <div className="flex gap-1" style={{ justifyContent: "flex-end" }}>
+                           <button
+                             id={`btn-edit-${tx.id}`}
+                             className="btn btn-secondary btn-sm btn-icon"
+                             onClick={() => openEditModal(tx)}
+                             title="Editar"
+                           >
+                             ✏️
+                           </button>
+                           <button
+                             id={`btn-delete-${tx.id}`}
+                             className="btn btn-danger btn-sm btn-icon"
+                             onClick={() => handleDelete(tx.id)}
+                             title="Eliminar"
+                           >
+                             🗑️
+                           </button>
+                         </div>
+                       </td>
                     </tr>
                   ))}
                 </tbody>
@@ -406,12 +452,12 @@ export default function TransaccionesPage() {
 
         {/* ── Modal ─────────────────────────────────────────────────────── */}
         {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-overlay" onClick={() => { setShowModal(false); setEditingTx(null); }}>
             <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
-              <h2 className="modal-title">Nueva Transacción</h2>
-              <p className="modal-subtitle">Registra un gasto o ingreso manual</p>
+              <h2 className="modal-title">{editingTx ? "Editar Transacción" : "Nueva Transacción"}</h2>
+              <p className="modal-subtitle">{editingTx ? "Modifica los campos y guarda los cambios" : "Registra un gasto o ingreso manual"}</p>
 
-              <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", paddingRight: 4 }}>
+              <form onSubmit={editingTx ? handleUpdate : handleCreate} style={{ display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", paddingRight: 4 }}>
                 <div className="grid-2">
                   <div className="form-group">
                     <label className="form-label">Monto</label>
@@ -462,9 +508,9 @@ export default function TransaccionesPage() {
                 )}
 
                 <div className="modal-footer">
-                  <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancelar</button>
+                  <button type="button" className="btn btn-ghost" onClick={() => { setShowModal(false); setEditingTx(null); }}>Cancelar</button>
                   <button id="btn-save-transaction" type="submit" className="btn btn-primary" disabled={formLoading}>
-                    {formLoading ? "Guardando..." : "💾 Guardar"}
+                    {formLoading ? "Guardando..." : editingTx ? "💾 Actualizar" : "💾 Guardar"}
                   </button>
                 </div>
               </form>

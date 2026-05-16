@@ -86,6 +86,14 @@ class TransactionCreate(BaseModel):
     description: Optional[str] = None
 
 
+class TransactionUpdate(BaseModel):
+    category_id: Optional[str] = None
+    amount: Optional[Decimal] = Field(None, gt=0)
+    currency: Optional[str] = Field(None, pattern="^(USD|VES)$")
+    transaction_date: Optional[datetime] = None
+    description: Optional[str] = None
+
+
 class TransactionResponse(BaseModel):
     id: str
     user_id: str

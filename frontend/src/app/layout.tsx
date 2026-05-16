@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, DM_Sans } from "next/font/google";
+import { BackendLoadingProvider } from "@/components/BackendLoadingProvider";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-heading" });
@@ -36,7 +37,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${spaceGrotesk.variable} ${dmSans.variable}`}>
-        {children}
+        <BackendLoadingProvider>{children}</BackendLoadingProvider>
       </body>
     </html>
   );

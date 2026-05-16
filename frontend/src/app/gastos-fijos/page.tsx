@@ -33,6 +33,47 @@ function formatUSD(v: number) {
   return v.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
 }
 
+function getNextExecutionDate(dayOfMonth: number, lastExecuted: string | null): string {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  // Check if already executed this month
+  if (lastExecuted) {
+    const [year, month] = lastExecuted.split("-").map(Number);
+    if (year === currentYear && month === currentMonth + 1) {
+      // Already executed this month, next is next month
+      const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+      const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+      return new Date(nextYear, nextMonth, dayOfMonth).toLocaleDateString("es-VE", {
+        day: "2-digit", month: "short", year: "numeric",
+      });
+    }
+  }
+
+  // Not executed this month yet
+  const targetDate = new Date(currentYear, currentMonth, dayOfMonth);
+  if (targetDate < now) {
+    // Day already passed this month, next is next month
+    const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+    const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+    return new Date(nextYear, nextMonth, dayOfMonth).toLocaleDateString("es-VE", {
+      day: "2-digit", month: "short", year: "numeric",
+    });
+  }
+
+  return targetDate.toLocaleDateString("es-VE", {
+    day: "2-digit", month: "short", year: "numeric",
+  });
+}
+
+function formatLastExecuted(lastExecuted: string | null): string {
+  if (!lastExecuted) return "Nunca";
+  const [year, month] = lastExecuted.split("-").map(Number);
+  const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  return `${months[month - 1]} ${year}`;
+}
+
 export default function GastosFijosPage() {
   const [expenses, setExpenses] = useState<RecurringExpense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -41,6 +82,7 @@ export default function GastosFijosPage() {
   const [showForm, setShowForm] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
   const [bcvRate, setBcvRate] = useState<number | null>(null);
+  const [editingExpense, setEditingExpense] = useState<RecurringExpense | null>(null);
 
   // Form state
   const [form, setForm] = useState({
@@ -77,19 +119,44 @@ export default function GastosFijosPage() {
     if (!form.description || !form.amount) return;
 
     try {
-      await createRecurringExpense({
-        description: form.description,
-        amount: parseFloat(form.amount),
-        currency: form.currency,
-        category_id: form.category_id || undefined,
-        day_of_month: parseInt(form.day_of_month),
-      });
+      if (editingExpense) {
+        await import("@/lib/api").then(({ updateRecurringExpense }) =>
+          updateRecurringExpense(editingExpense.id, {
+            description: form.description,
+            amount: parseFloat(form.amount),
+            currency: form.currency,
+            category_id: form.category_id || undefined,
+            day_of_month: parseInt(form.day_of_month),
+          })
+        );
+      } else {
+        await createRecurringExpense({
+          description: form.description,
+          amount: parseFloat(form.amount),
+          currency: form.currency,
+          category_id: form.category_id || undefined,
+          day_of_month: parseInt(form.day_of_month),
+        });
+      }
       setForm({ description: "", amount: "", currency: "USD", category_id: "", day_of_month: "1" });
       setShowForm(false);
+      setEditingExpense(null);
       load();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Error creando gasto recurrente");
     }
+  };
+
+  const openEditForm = (expense: RecurringExpense) => {
+    setEditingExpense(expense);
+    setForm({
+      description: expense.description,
+      amount: String(expense.amount),
+      currency: expense.currency,
+      category_id: expense.category_id || "",
+      day_of_month: String(expense.day_of_month),
+    });
+    setShowForm(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -169,7 +236,7 @@ export default function GastosFijosPage() {
         {/* Create Form */}
         {showForm && (
           <div className="card" style={{ marginBottom: 24, borderLeft: "3px solid var(--accent)" }}>
-            <h3 className="text-lg font-bold mb-4">Nuevo Gasto Recurrente</h3>
+            <h3 className="text-lg font-bold mb-4">{editingExpense ? "Editar Gasto Recurrente" : "Nuevo Gasto Recurrente"}</h3>
             <form onSubmit={handleSubmit} className="form-grid-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
               <div>
                 <label className="form-label">Descripción *</label>
@@ -232,7 +299,7 @@ export default function GastosFijosPage() {
               </div>
               <div style={{ display: "flex", alignItems: "flex-end" }}>
                 <button type="submit" className="btn btn-primary" style={{ width: "100%" }}>
-                  ✓ Guardar
+                  {editingExpense ? "✓ Actualizar" : "✓ Guardar"}
                 </button>
               </div>
             </form>
@@ -282,6 +349,8 @@ export default function GastosFijosPage() {
                   <th style={thStyle}>Categoría</th>
                   <th style={thStyle}>Monto</th>
                   <th style={thStyle}>Día</th>
+                  <th style={thStyle}>Última Ejecución</th>
+                  <th style={thStyle}>Próxima Ejecución</th>
                   <th style={thStyle}>Acciones</th>
                 </tr>
               </thead>
@@ -328,14 +397,35 @@ export default function GastosFijosPage() {
                         {exp.day_of_month}
                       </span>
                     </td>
+                    <td style={{ ...tdStyle, textAlign: "center", fontSize: 12, color: "var(--text-muted)" }}>
+                      {formatLastExecuted(exp.last_executed)}
+                    </td>
+                    <td style={{ ...tdStyle, textAlign: "center", fontSize: 12, fontWeight: 600 }}>
+                      {exp.is_active ? (
+                        <span style={{ color: "var(--accent-green)" }}>
+                          {getNextExecutionDate(exp.day_of_month, exp.last_executed)}
+                        </span>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
                     <td style={{ ...tdStyle, textAlign: "center" }}>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => handleDelete(exp.id)}
-                        style={{ color: "var(--accent-red)", fontSize: 12 }}
-                      >
-                        🗑 Eliminar
-                      </button>
+                      <div className="flex gap-1" style={{ justifyContent: "center" }}>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => openEditForm(exp)}
+                          style={{ color: "var(--accent-yellow)", fontSize: 12 }}
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleDelete(exp.id)}
+                          style={{ color: "var(--accent-red)", fontSize: 12 }}
+                        >
+                          🗑 Eliminar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

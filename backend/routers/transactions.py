@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Body
 from supabase import Client
 from schemas.entities import (
     TransactionCreate,
+    TransactionUpdate,
     TransactionResponse,
     CSVUploadResponse,
 )
@@ -87,25 +88,67 @@ def create_transaction(
 @router.put("/{transaction_id}", response_model=TransactionResponse)
 def update_transaction(
     transaction_id: str,
+    transaction_update: TransactionUpdate,
     user_id: str = Depends(get_current_user_id),
-    amount: float | None = None,
-    currency: str | None = None,
-    category_id: str | None = None,
-    description: str | None = None,
     supabase: Client = Depends(get_supabase),
 ):
-    data = {}
-    if amount is not None:
-        data["amount"] = amount
-    if currency is not None:
-        data["currency"] = currency
-    if category_id is not None:
-        data["category_id"] = category_id
-    if description is not None:
-        data["description"] = description
+    # Get current transaction
+    current = (
+        supabase.table("transactions")
+        .select("*")
+        .eq("id", transaction_id)
+        .eq("user_id", user_id)
+        .maybe_single()
+        .execute()
+    )
+    if not current or not current.data:
+        raise HTTPException(status_code=404, detail="Transaction not found")
 
+    data = transaction_update.model_dump(exclude_unset=True, mode="json")
     if not data:
         raise HTTPException(status_code=400, detail="No data to update")
+
+    current_tx = current.data
+    needs_recalc = False
+
+    # Check if currency or date changed (needs USD recalculation)
+    if "currency" in data and data["currency"] != current_tx.get("currency"):
+        needs_recalc = True
+    if "transaction_date" in data and data["transaction_date"] != current_tx.get("transaction_date"):
+        needs_recalc = True
+    if "amount" in data and current_tx.get("currency") == "VES":
+        needs_recalc = True
+
+    # Recalculate USD equivalent if needed
+    if needs_recalc:
+        new_currency = data.get("currency", current_tx.get("currency"))
+        new_amount = data.get("amount", current_tx.get("amount"))
+        new_date_str = data.get("transaction_date", current_tx.get("transaction_date"))
+        new_date = datetime.fromisoformat(new_date_str.replace("Z", "+00:00")).date() if new_date_str else date.today()
+
+        if new_currency == "VES":
+            rate_data = get_exchange_rate(supabase, new_date)
+            if not rate_data:
+                rate_data = get_closest_exchange_rate(supabase, new_date)
+            if rate_data:
+                rate = Decimal(str(rate_data["bcv_rate"]))
+                data["usd_equivalent"] = float(
+                    calculate_usd_equivalent(Decimal(str(new_amount)), rate)
+                )
+            else:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"No exchange rate found for {new_date} or earlier",
+                )
+        else:
+            data["usd_equivalent"] = float(new_amount)
+
+    # Re-run category matching if description changed and no category set
+    if "description" in data and not data.get("category_id") and not current_tx.get("category_id"):
+        if data["description"]:
+            matched = match_category_from_rules(supabase, user_id, data["description"])
+            if matched:
+                data["category_id"] = matched
 
     result = (
         supabase.table("transactions")

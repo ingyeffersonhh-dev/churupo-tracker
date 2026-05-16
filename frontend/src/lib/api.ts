@@ -86,6 +86,14 @@ export const createTransaction = (data: {
 export const deleteTransaction = (id: string) =>
   fetchWithAuth(`/transactions/${id}`, { method: "DELETE" });
 
+export const updateTransaction = (id: string, data: {
+  amount?: number;
+  currency?: string;
+  category_id?: string;
+  description?: string;
+  transaction_date?: string;
+}) => fetchWithAuth(`/transactions/${id}`, { method: "PUT", body: JSON.stringify(data) });
+
 // ─── Categories ───────────────────────────────────────────────────────────────
 export const getCategories = () => fetchWithAuth("/categories/");
 export const createCategory = (data: { name: string; type: string; icon?: string }) =>
