@@ -133,18 +133,21 @@ export default function Sidebar() {
       </header>
 
       <nav className="mobile-bottom-nav">
-        {NAV_ITEMS.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`mobile-nav-item ${(pathname || "").startsWith(item.href) ? "active" : ""}`}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-            </svg>
-            <span className="mobile-nav-label">{item.label}</span>
-          </Link>
-        ))}
+        {NAV_ITEMS.map((item) => {
+          const isActive = (pathname || "").startsWith(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`mobile-nav-item ${isActive ? "active" : ""}`}
+            >
+              <div className={`mobile-nav-icon ${isActive ? "active" : ""}`}>
+                <span style={{ fontSize: 20 }}>{getEmojiForHref(item.href)}</span>
+              </div>
+              <span className="mobile-nav-label">{item.label}</span>
+            </Link>
+          );
+        })}
       </nav>
     </>
   );
