@@ -59,6 +59,9 @@ def generate_monthly_chart(
         
         if not categories:
             return _generate_empty_chart(month, year)
+    except Exception as e:
+        logger.error(f"Error before chart generation: {e}")
+        return _generate_empty_chart(month, year)
 
         # Ordenar por gasto descendente
         categories.sort(key=lambda x: x["spent_usd"], reverse=True)
@@ -229,11 +232,17 @@ def generate_monthly_chart(
         return buf.getvalue()
 
     except Exception as e:
-        logger.error(f"Error generating chart: {e}")
+        logger.error(f"Error generating chart with matplotlib: {e}")
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
         plt.close("all")
-        return None
+        
+        # Fallback: generar chart simple con Pillow
+        try:
+            return _generate_fallback_chart(by_category, month, year, total_usd, username)
+        except Exception as fallback_error:
+            logger.error(f"Fallback also failed: {fallback_error}")
+            return None
 
 
 def _generate_empty_chart(month: int, year: int) -> bytes:
@@ -272,3 +281,47 @@ def _month_name(month: int) -> str:
         "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
     ]
     return months[month] if 1 <= month <= 12 else "?"
+
+
+def _generate_fallback_chart(
+    by_category: list[dict],
+    month: int,
+    year: int,
+    total_usd: float,
+    username: str,
+) -> bytes:
+    """Genera un gráfico simple de texto como fallback."""
+    from PIL import Image, ImageDraw, ImageFont
+    
+    width, height = 600, 400
+    img = Image.new("RGB", (width, height), color=BG_COLOR)
+    draw = ImageDraw.Draw(img)
+    
+    try:
+        font_title = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 20)
+        font_normal = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14)
+    except:
+        font_title = ImageFont.load_default()
+        font_normal = ImageFont.load_default()
+    
+    month_name = _month_name(month)
+    
+    draw.text((300, 30), f"CHURUPO TRACKER - {username.upper()}", fill=TEXT_COLOR, anchor="mm", font=font_title)
+    draw.text((300, 70), f"{month_name} {year} | Total: ${total_usd:.2f}", fill=TEXT_COLOR, anchor="mm", font=font_normal)
+    
+    y = 120
+    categories = [c for c in by_category if c.get("spent_usd", 0) > 0][:8]
+    for c in categories:
+        cat_name = c.get("category_name", "Sin categoría")[:20]
+        spent = c.get("spent_usd", 0)
+        pct = c.get("percentage") or 0
+        color = ACCENT_GREEN if pct < 80 else ("#FFB800" if pct < 100 else "#FF3333")
+        
+        draw.text((50, y), f"{cat_name}", fill=TEXT_COLOR, font=font_normal)
+        draw.text((400, y), f"${spent:.2f}", fill=color, font=font_normal)
+        y += 30
+    
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return buf.getvalue()
