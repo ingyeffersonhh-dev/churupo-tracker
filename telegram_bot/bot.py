@@ -54,7 +54,18 @@ def start_flask_server():
 
 
 async def post_init(application: Application) -> None:
-    """Configura el scheduler."""
+    """Configura el scheduler y verifica webhook."""
+    import httpx
+    
+    bot = application.bot
+    webhook_info = await bot.get_webhook_info()
+    logger.info(f"Webhook actual: {webhook_info}")
+    
+    if webhook_info.url:
+        logger.info(f"Webhook activo en: {webhook_info.url}")
+    else:
+        logger.warning("No hay webhook configurado!")
+    
     scheduler = setup_scheduler(application)
     scheduler.start()
     logger.info("Scheduler activo — resúmenes diarios/semanales/mensuales listos")
