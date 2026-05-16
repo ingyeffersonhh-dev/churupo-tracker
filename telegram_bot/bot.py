@@ -39,6 +39,7 @@ flask_app = Flask(__name__)
 @flask_app.route("/")
 @flask_app.route("/health")
 def health_check():
+    logger.info("Health check recibido")
     return jsonify({"status": "ok", "message": "Bot funcionando"})
 
 
