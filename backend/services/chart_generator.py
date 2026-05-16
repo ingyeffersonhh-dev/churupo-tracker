@@ -230,6 +230,8 @@ def generate_monthly_chart(
 
     except Exception as e:
         logger.error(f"Error generating chart: {e}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         plt.close("all")
         return None
 
