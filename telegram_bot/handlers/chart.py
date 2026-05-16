@@ -32,9 +32,11 @@ async def chart_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "🔗 Cuenta no vinculada. Escribe /start para vincularla."
             )
         else:
-            await update.message.reply_text("⚠️ Error generando el gráfico.")
-    except Exception:
-        await update.message.reply_text("⚠️ No pude generar el gráfico. Intenta más tarde.")
+            await update.message.reply_text(f"⚠️ Error del servidor ({e.response.status_code}). Intenta más tarde.")
+    except httpx.TimeoutException:
+        await update.message.reply_text("⏱️ Tiempo de espera agotado. Intenta más tarde.")
+    except Exception as e:
+        await update.message.reply_text(f"⚠️ Error: {type(e).__name__}. Intenta más tarde.")
 
 
 def _month_name(month: int) -> str:

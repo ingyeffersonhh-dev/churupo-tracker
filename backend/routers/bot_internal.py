@@ -11,6 +11,9 @@ from config import settings
 from services.nlp_parser import parse_expense
 from services.bcv_scraper import get_current_rate
 from services.chart_generator import generate_monthly_chart
+import logging
+
+logger = logging.getLogger(__name__)
 from services.database import (
     get_exchange_rate,
     get_closest_exchange_rate,
@@ -376,9 +379,14 @@ async def get_monthly_chart(
     username = (tg_user.data if tg_user and tg_user.data else {}).get("telegram_username") or "Usuario"
 
     # Generar imagen
-    png_bytes = generate_monthly_chart(by_category, target_month, target_year, total_usd, username)
-    if not png_bytes:
-        raise HTTPException(status_code=500, detail="Error generating chart")
+    try:
+        png_bytes = generate_monthly_chart(by_category, target_month, target_year, total_usd, username)
+        if not png_bytes:
+            logger.error(f"Chart generation returned None for user {telegram_id}")
+            raise HTTPException(status_code=500, detail="Error generating chart image")
+    except Exception as e:
+        logger.error(f"Chart generation failed for user {telegram_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Chart generation failed: {str(e)}")
 
     return Response(content=png_bytes, media_type="image/png")
 
