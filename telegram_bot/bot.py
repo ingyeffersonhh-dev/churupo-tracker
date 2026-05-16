@@ -58,8 +58,13 @@ async def post_init(application: Application) -> None:
     import httpx
     
     bot = application.bot
+    
+    # Forzar eliminación de cualquier webhook anterior
+    await bot.delete_webhook(drop_pending_updates=True)
+    logger.info("Webhook anterior eliminado")
+    
     webhook_info = await bot.get_webhook_info()
-    logger.info(f"Webhook actual: {webhook_info}")
+    logger.info(f"Webhook actual después de limpiar: {webhook_info}")
     
     if webhook_info.url:
         logger.info(f"Webhook activo en: {webhook_info.url}")
