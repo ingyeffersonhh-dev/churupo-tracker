@@ -11,6 +11,37 @@ export default function ConfiguracionPage() {
   const [rules, setRules] = useState<MerchantRule[]>([]);
   const [cats,  setCats]  = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+
+    window.addEventListener('appinstalled', () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    });
+
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+    }
+
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  async function handleInstall() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+      setIsInstalled(true);
+    }
+  }
 
   // Form reglas
   const [keyword, setKeyword] = useState("");
@@ -145,6 +176,67 @@ export default function ConfiguracionPage() {
                 </table>
               </div>
             )}
+          </div>
+
+          {/* ─── App Móvil (PWA) ───────────────────────────────────────── */}
+          <div className="card">
+            <h2 className="text-lg font-bold mb-2">📲 Aplicación Móvil</h2>
+            <p className="text-secondary text-sm mb-6">
+              Instala Churupo en tu pantalla de inicio para acceso rápido sin abrir el navegador.
+            </p>
+
+            <div style={{ background: "var(--bg-sidebar)", border: "2px solid var(--border)", padding: 32, position: "relative" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                <div className="flex items-center gap-4 mb-2">
+                  <div style={{ fontSize: 40, background: "var(--accent)", color: "var(--accent-text)", padding: 12, border: "2px solid var(--border)", boxShadow: "4px 4px 0px var(--border)", display: "flex", alignItems: "center", justifyContent: "center", width: 64, height: 64 }}>💸</div>
+                  <div>
+                    <div className="font-bold text-xl uppercase italic">Churupo Tracker</div>
+                    <div className="text-secondary text-sm" style={{ fontWeight: 600 }}>{isInstalled ? "✅ Ya instalada" : "Disponible para instalar"}</div>
+                  </div>
+                </div>
+
+                {!isInstalled && (
+                  <button
+                    id="btn-install-pwa"
+                    className="btn btn-primary"
+                    onClick={handleInstall}
+                    disabled={!deferredPrompt}
+                    style={{
+                      width: "fit-content",
+                      padding: "14px 32px",
+                      fontSize: 15,
+                      opacity: deferredPrompt ? 1 : 0.6,
+                    }}
+                  >
+                    ⬇️ Instalar Aplicación
+                  </button>
+                )}
+
+                {isInstalled && (
+                  <div style={{ padding: 16, border: "2px solid var(--accent-green)", background: "rgba(0,204,102,0.08)" }}>
+                    <span style={{ fontWeight: 700, color: "var(--accent-green)" }}>
+                      ✅ Churupo está instalada en tu dispositivo
+                    </span>
+                  </div>
+                )}
+
+                {!isInstalled && !deferredPrompt && (
+                  <div style={{ padding: 16, border: "2px solid var(--border-light)", background: "var(--bg-main)" }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>📋 Instalación manual:</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
+                      <div style={{ border: "1px solid var(--border-light)", padding: 12 }}>
+                        <div style={{ fontWeight: 800, fontSize: 12, color: "var(--accent)" }}>Android / Chrome</div>
+                        <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>Toca ⋮ → "Instalar aplicación" o "Agregar a pantalla de inicio"</div>
+                      </div>
+                      <div style={{ border: "1px solid var(--border-light)", padding: 12 }}>
+                        <div style={{ fontWeight: 800, fontSize: 12, color: "var(--accent)" }}>iPhone / Safari</div>
+                        <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>Toca Compartir → "Agregar a pantalla de inicio"</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* ─── Bot de Telegram ─────────────────────────────────────────── */}
