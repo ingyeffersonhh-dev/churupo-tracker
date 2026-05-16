@@ -10,6 +10,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from api_client import api_get, api_post
 from telegram.ext import Application
+from datetime import date
 
 logger = logging.getLogger(__name__)
 
@@ -191,12 +192,33 @@ async def process_recurring_expenses(app: Application):
             logger.debug("No recurring expenses to process today")
 
     except Exception as e:
-        logger.error(f"Error processing recurring expenses: {e}")
+        logger.error(f"Error processing recurring expenses: {e")
+
+
+async def update_bcv_rate(app: Application):
+    """Actualiza la tasa BCV cada día a las 7:00 AM."""
+    try:
+        result = await api_post("/bot/update-exchange-rate", {})
+        if result.get("success"):
+            logger.info(f"BCV rate updated: {result.get('bcv_rate')} - {result.get('date')}")
+        else:
+            logger.warning(f"Failed to update BCV rate: {result.get('message')}")
+    except Exception as e:
+        logger.error(f"Error updating BCV rate: {e}")
 
 
 def setup_scheduler(app: Application) -> AsyncIOScheduler:
     """Configura y retorna el scheduler."""
     scheduler = AsyncIOScheduler(timezone="America/Caracas")
+
+    # Actualizar tasa BCV: diario a las 7:00 AM
+    scheduler.add_job(
+        update_bcv_rate,
+        trigger=CronTrigger(hour=7, minute=0),
+        args=[app],
+        id="update_bcv_rate",
+        name="Daily BCV Rate Update",
+    )
 
     # Gastos recurrentes: diario a las 8:00 AM
     scheduler.add_job(

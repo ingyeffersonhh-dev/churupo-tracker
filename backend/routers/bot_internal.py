@@ -401,3 +401,31 @@ def get_all_linked_users(
     """Lista todos los telegram_id vinculados (para el scheduler de notificaciones)."""
     result = supabase.table("telegram_users").select("telegram_id, telegram_username").execute()
     return {"users": result.data or []}
+
+
+@router.post("/update-exchange-rate")
+async def update_exchange_rate(
+    _: str = Depends(verify_bot_secret),
+    supabase: Client = Depends(get_supabase),
+):
+    """Actualiza la tasa BCV desde el scraper y la guarda en la BD."""
+    from datetime import date
+    
+    rate_info = await get_current_rate(supabase)
+    
+    if rate_info and rate_info.get("rate"):
+        today = date.today()
+        result = supabase.table("exchange_rates").upsert({
+            "date": str(today),
+            "bcv_rate": rate_info["rate"],
+            "parallel_rate": rate_info["rate"] * 1.04,  # Aproximado
+        }, on_conflict="date").execute()
+        
+        return {
+            "success": True,
+            "date": str(today),
+            "bcv_rate": rate_info["rate"],
+            "source": rate_info.get("source"),
+        }
+    
+    return {"success": False, "message": "No se pudo obtener la tasa"}
