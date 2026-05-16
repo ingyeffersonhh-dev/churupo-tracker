@@ -51,8 +51,12 @@ def generate_monthly_chart(
     Retorna bytes del PNG o None si hay error.
     """
     try:
+        logger.info(f"Generating chart for {username} - month {month}/{year}, total ${total_usd}")
+        
         # Filtrar categorías con gastos
         categories = [c for c in by_category if c.get("spent_usd", 0) > 0]
+        logger.info(f"Categories with spending: {categories}")
+        
         if not categories:
             return _generate_empty_chart(month, year)
 

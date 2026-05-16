@@ -379,13 +379,15 @@ async def get_monthly_chart(
     username = (tg_user.data if tg_user and tg_user.data else {}).get("telegram_username") or "Usuario"
 
     # Generar imagen
+    logger.info(f"Generating chart for user {telegram_id}: {len(by_category)} categories, total ${total_usd}")
     try:
         png_bytes = generate_monthly_chart(by_category, target_month, target_year, total_usd, username)
         if not png_bytes:
             logger.error(f"Chart generation returned None for user {telegram_id}")
             raise HTTPException(status_code=500, detail="Error generating chart image")
     except Exception as e:
-        logger.error(f"Chart generation failed for user {telegram_id}: {e}")
+        import traceback
+        logger.error(f"Chart generation failed for user {telegram_id}: {e}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Chart generation failed: {str(e)}")
 
     return Response(content=png_bytes, media_type="image/png")
