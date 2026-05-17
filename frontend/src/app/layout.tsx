@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, DM_Sans } from "next/font/google";
 import { BackendLoadingProvider } from "@/components/BackendLoadingProvider";
-import { registerSW } from "@/lib/register-sw";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-heading" });
@@ -48,15 +47,12 @@ export default function RootLayout({
             `,
           }}
         />
-      </head>
-      <body className={`${spaceGrotesk.variable} ${dmSans.variable}`}>
-        <BackendLoadingProvider>{children}</BackendLoadingProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                  navigator.serviceWorker.register('/sw.js', { scope: '/' }).then(function(reg) {
                     console.log('[SW] Registered:', reg.scope);
                   }).catch(function(err) {
                     console.log('[SW] Registration failed:', err);
@@ -66,6 +62,9 @@ export default function RootLayout({
             `,
           }}
         />
+      </head>
+      <body className={`${spaceGrotesk.variable} ${dmSans.variable}`}>
+        <BackendLoadingProvider>{children}</BackendLoadingProvider>
       </body>
     </html>
   );

@@ -16,7 +16,7 @@ from services.database import (
 )
 from services.csv_processor import parse_csv, prepare_transactions_for_insert
 from decimal import Decimal
-from datetime import date
+from datetime import date, datetime
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 

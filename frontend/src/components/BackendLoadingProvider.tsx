@@ -1,21 +1,7 @@
 "use client";
 
-import { useEffect, useState, createContext, useContext, type ReactNode } from "react";
+import { useEffect, useState, useRef, type ReactNode } from "react";
 import { CpuArchitectureLoading } from "@/components/CpuArchitectureLoading";
-
-interface BackendContextType {
-  isBackendReady: boolean;
-  isChecking: boolean;
-}
-
-const BackendContext = createContext<BackendContextType>({
-  isBackendReady: true,
-  isChecking: false,
-});
-
-export function useBackendStatus() {
-  return useContext(BackendContext);
-}
 
 const getApiUrl = () => {
   if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
@@ -26,8 +12,10 @@ const getApiUrl = () => {
 };
 
 export function BackendLoadingProvider({ children }: { children: ReactNode }) {
+  const [showSplash, setShowSplash] = useState(true);
   const [isBackendReady, setIsBackendReady] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const startTime = useRef(Date.now());
 
   useEffect(() => {
     let mounted = true;
@@ -36,7 +24,7 @@ export function BackendLoadingProvider({ children }: { children: ReactNode }) {
       try {
         const apiUrl = getApiUrl();
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
+        const timeout = setTimeout(() => controller.abort(), 8000);
 
         const res = await fetch(`${apiUrl}/docs`, {
           method: "HEAD",
@@ -45,7 +33,11 @@ export function BackendLoadingProvider({ children }: { children: ReactNode }) {
         clearTimeout(timeout);
 
         if (mounted) {
-          setIsBackendReady(res.ok || res.status === 404 || res.status === 200);
+          if (res.ok || res.status === 404 || res.status === 200) {
+            setIsBackendReady(true);
+          } else {
+            setIsBackendReady(false);
+          }
           setIsChecking(false);
         }
       } catch {
@@ -70,7 +62,21 @@ export function BackendLoadingProvider({ children }: { children: ReactNode }) {
     };
   }, [isBackendReady]);
 
-  if (isChecking && !isBackendReady) {
+  useEffect(() => {
+    if (isBackendReady && !isChecking) {
+      const elapsed = Date.now() - startTime.current;
+      const minDuration = 2000;
+      const remaining = Math.max(0, minDuration - elapsed);
+
+      const timer = setTimeout(() => {
+        setShowSplash(false);
+      }, remaining);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isBackendReady, isChecking]);
+
+  if (showSplash) {
     return (
       <div
         style={{
@@ -90,9 +96,5 @@ export function BackendLoadingProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  return (
-    <BackendContext.Provider value={{ isBackendReady, isChecking }}>
-      {children}
-    </BackendContext.Provider>
-  );
+  return children;
 }

@@ -26,23 +26,39 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
-  if (event.request.url.includes('/api/') || event.request.url.includes('/transactions') || event.request.url.includes('/analytics')) {
-    event.respondWith(
-      fetch(event.request).catch(() =>
-        caches.match(event.request)
-      )
-    );
+  // Never cache navigation requests — always go to network
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request));
     return;
   }
 
+  // API requests: network-first, no caching
+  const isApi = event.request.url.includes('/api/') ||
+    event.request.url.includes('/transactions') ||
+    event.request.url.includes('/analytics') ||
+    event.request.url.includes('/budgets') ||
+    event.request.url.includes('/categories') ||
+    event.request.url.includes('/recurring') ||
+    event.request.url.includes('/exchange-rate') ||
+    event.request.url.includes('/merchant-rules') ||
+    event.request.url.includes('/export');
+
+  if (isApi) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Static assets: cache-first
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      const fetchPromise = fetch(event.request).then((response) => {
-        const cacheCopy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cacheCopy));
+      if (cached) return cached;
+      return fetch(event.request).then((response) => {
+        if (response.ok) {
+          const cacheCopy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cacheCopy));
+        }
         return response;
       });
-      return cached || fetchPromise;
     })
   );
 });
