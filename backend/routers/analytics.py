@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from supabase import Client
 from supabase_client import get_supabase
 from dependencies import get_current_user_id
+from routers.recurring_processor import process_user_recurring_expenses
 from decimal import Decimal
 from datetime import datetime
 
@@ -18,6 +19,10 @@ def get_analytics_summary(
     now = datetime.now()
     target_month = month or now.month
     target_year = year or now.year
+
+    # Procesar automáticamente cualquier gasto recurrente pendiente del usuario para el mes actual
+    if target_month == now.month and target_year == now.year:
+        process_user_recurring_expenses(supabase, user_id)
 
     month_start = f"{target_year}-{target_month:02d}-01"
     if target_month == 12:

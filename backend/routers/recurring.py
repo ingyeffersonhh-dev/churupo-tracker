@@ -13,6 +13,7 @@ from schemas.entities import (
 )
 from supabase_client import get_supabase
 from dependencies import get_current_user_id
+from routers.recurring_processor import process_user_recurring_expenses
 
 router = APIRouter(prefix="/recurring", tags=["recurring-expenses"])
 
@@ -23,6 +24,9 @@ def get_recurring_expenses(
     supabase: Client = Depends(get_supabase),
 ):
     """Lista todos los gastos recurrentes del usuario."""
+    # Procesar automáticamente cualquier gasto recurrente pendiente del usuario
+    process_user_recurring_expenses(supabase, user_id)
+
     result = (
         supabase.table("recurring_expenses")
         .select("*")

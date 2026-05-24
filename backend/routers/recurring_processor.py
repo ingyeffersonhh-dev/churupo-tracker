@@ -73,7 +73,7 @@ def process_recurring_today(
                 "currency": exp["currency"],
                 "description": f"[Recurrente] {exp['description']}",
                 "transaction_date": today.isoformat(),
-                "source": "recurring",
+                "source": "manual",
             }
 
             if exp.get("category_id"):
@@ -127,3 +127,88 @@ def process_recurring_today(
 
     success_count = len([p for p in processed if p["status"] == "success"])
     return {"processed": success_count, "total": len(result.data), "results": processed}
+
+
+def process_user_recurring_expenses(supabase: Client, user_id: str) -> int:
+    """
+    Checks and processes any pending active recurring expenses for the given user.
+    Executes if today is >= day_of_month, and the expense hasn't been executed
+    for the current month yet.
+    Returns the count of successfully processed expenses.
+    """
+    today = datetime.now()
+    current_day = today.day
+    month_key = f"{today.year}-{today.month:02d}"
+
+    # Get all active recurring expenses for this user
+    result = (
+        supabase.table("recurring_expenses")
+        .select("*")
+        .eq("user_id", user_id)
+        .eq("is_active", True)
+        .execute()
+    )
+
+    if not result.data:
+        return 0
+
+    success_count = 0
+
+    for exp in result.data:
+        day_of_month = exp["day_of_month"]
+        
+        # Check if it is due (scheduled day of month is <= today's day)
+        if day_of_month > current_day:
+            continue
+
+        # Check if already executed this month
+        if exp.get("last_executed") == month_key:
+            continue
+
+        try:
+            # Scheduled date is retroactively set to the exact day of this month
+            scheduled_date = datetime(today.year, today.month, day_of_month)
+            
+            # Prepare transaction data
+            tx_data = {
+                "user_id": user_id,
+                "amount": float(exp["amount"]),
+                "currency": exp["currency"],
+                "description": f"[Recurrente] {exp['description']}",
+                "transaction_date": scheduled_date.isoformat(),
+                "source": "manual", # Constraint: 'manual', 'csv'
+            }
+
+            if exp.get("category_id"):
+                tx_data["category_id"] = exp["category_id"]
+
+            # Calculate USD equivalent
+            if exp["currency"] == "VES":
+                rate_data = get_exchange_rate(supabase, scheduled_date.date())
+                if not rate_data:
+                    rate_data = get_closest_exchange_rate(supabase, scheduled_date.date())
+                if rate_data:
+                    rate = Decimal(str(rate_data["bcv_rate"]))
+                    tx_data["usd_equivalent"] = float(
+                        calculate_usd_equivalent(Decimal(str(exp["amount"])), rate)
+                    )
+                else:
+                    tx_data["usd_equivalent"] = None
+            else:
+                tx_data["usd_equivalent"] = float(exp["amount"])
+
+            # Insert transaction
+            insert_result = supabase.table("transactions").insert(tx_data).execute()
+
+            if insert_result.data:
+                # Mark as executed for this month
+                supabase.table("recurring_expenses").update(
+                    {"last_executed": month_key}
+                ).eq("id", exp["id"]).execute()
+                success_count += 1
+
+        except Exception as e:
+            logger.error(f"Error processing user recurring expense {exp['id']}: {e}")
+
+    return success_count
+
