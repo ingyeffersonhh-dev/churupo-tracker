@@ -175,6 +175,24 @@ export default function Sidebar() {
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
       </header>
+
+      <nav className="mobile-bottom-nav">
+        {NAV_ITEMS.map((item) => {
+          const isActive = (pathname || "").startsWith(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`mobile-nav-item ${isActive ? "active" : ""}`}
+            >
+              <div className={`mobile-nav-icon ${isActive ? "active" : ""}`}>
+                <span style={{ fontSize: 20 }}>{getEmojiForHref(item.href)}</span>
+              </div>
+              <span className="mobile-nav-label">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </>
   );
 }
