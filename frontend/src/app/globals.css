@@ -171,6 +171,12 @@ h1, h2, h3, h4, h5, h6 {
   top: 0;
   height: 100vh;
   overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .sidebar-logo {
@@ -810,13 +816,68 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ==========================================================================
-   MOBILE RESPONSIVE STYLES
+   MOBILE RESPONSIVE STYLES & DRAWER MENU
    ========================================================================== */
 
-/* Hide sidebar on mobile, show bottom nav */
+/* Sidebar overlay background */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 90;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Close button inside sidebar */
+.mobile-close-btn {
+  display: none;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 2px 2px 0px var(--border);
+  color: var(--text-main);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.mobile-close-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Hide sidebar by default on mobile, display as sliding drawer */
 @media (max-width: 1023px) {
   .sidebar {
-    display: none;
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 100;
+    width: 280px;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 4px 0px 0px var(--border);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .mobile-close-btn {
+    display: flex;
   }
 
   .app-shell {
@@ -827,8 +888,8 @@ h1, h2, h3, h4, h5, h6 {
   }
   
   .main-content {
-    padding: 12px 12px;
-    padding-bottom: 80px;
+    padding: 16px 16px;
+    padding-bottom: 24px;
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
@@ -951,7 +1012,7 @@ h1, h2, h3, h4, h5, h6 {
     margin-bottom: 18px;
   }
 
-  /* Mobile header */
+  /* Mobile header styling */
   .mobile-header {
     display: flex;
     align-items: center;
@@ -978,12 +1039,8 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Desktop layout */
+/* Desktop layout overrides */
 @media (min-width: 1024px) {
-  .mobile-bottom-nav {
-    display: none !important;
-  }
-
   .mobile-header {
     display: none !important;
   }
@@ -993,102 +1050,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* ==========================================================================
-   BOTTOM NAVIGATION BAR (MOBILE) — Neo-Brutalist Style
-   ========================================================================== */
-
-.mobile-bottom-nav {
-  display: flex;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: var(--bg-card);
-  border-top: 3px solid var(--border);
-  z-index: 50;
-  padding: 0;
-  padding-bottom: max(0px, env(safe-area-inset-bottom));
-  box-shadow: 0 -4px 0px var(--border);
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.mobile-nav-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 2px 4px;
-  text-decoration: none;
-  color: var(--text-muted);
-  gap: 2px;
-  min-height: 56px;
-  position: relative;
-  -webkit-tap-highlight-color: transparent;
-  transition: color 0.15s ease, background-color 0.15s ease;
-  border-right: 1px solid var(--border-light);
-}
-
-.mobile-nav-item:last-child {
-  border-right: none;
-}
-
-.mobile-nav-item:active {
-  background: var(--accent-light);
-}
-
-.mobile-nav-item:hover {
-  color: var(--text-secondary);
-}
-
-.mobile-nav-item.active {
-  color: var(--accent-text);
-  background: var(--accent);
-  border-right-color: var(--border);
-}
-
-.mobile-nav-item.active::before {
-  content: "";
-  position: absolute;
-  top: -3px;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--border);
-}
-
-.mobile-nav-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 24px;
-  border-radius: 2px;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  filter: grayscale(60%);
-}
-
-.mobile-nav-icon.active {
-  filter: grayscale(0%);
-  transform: scale(1.1);
-}
-
-.mobile-nav-label {
-  font-size: 9px;
-  font-weight: 800;
-  font-family: var(--font-heading), system-ui, sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  max-width: 64px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: center;
-  line-height: 1.1;
-}
-
-/* Mobile header - hidden by default, shown via media query */
+/* Hidden elements */
 .mobile-header {
   display: none;
 }

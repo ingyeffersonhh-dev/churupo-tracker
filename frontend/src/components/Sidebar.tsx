@@ -19,6 +19,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [theme, setTheme] = useState("dark");
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("app-theme") || "dark";
@@ -42,13 +43,22 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="sidebar">
-        <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">💸</div>
-          <div>
-            <div className="sidebar-logo-text">Churupo Tracker</div>
-            <div className="sidebar-logo-sub">Panel de control</div>
+      <aside className={`sidebar ${isOpen ? "open" : ""}`}>
+        <div className="sidebar-logo" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="sidebar-logo-icon">💸</div>
+            <div>
+              <div className="sidebar-logo-text">Churupo Tracker</div>
+              <div className="sidebar-logo-sub">Panel de control</div>
+            </div>
           </div>
+          <button 
+            onClick={() => setIsOpen(false)} 
+            className="mobile-close-btn"
+            aria-label="Cerrar menú"
+          >
+            ✕
+          </button>
         </div>
 
         <nav className="sidebar-nav">
@@ -59,6 +69,7 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               className={`nav-link ${(pathname || "").startsWith(item.href) ? "active" : ""}`}
+              onClick={() => setIsOpen(false)}
             >
               <span className="nav-link-icon">{getEmojiForHref(item.href)}</span>
               {item.label}
@@ -68,7 +79,10 @@ export default function Sidebar() {
           <div className="nav-section-title" style={{ marginTop: "auto" }}>Cuenta</div>
 
           <button
-            onClick={toggleTheme}
+            onClick={() => {
+              setIsOpen(false);
+              toggleTheme();
+            }}
             className="nav-link"
             style={{ background: "none", border: "none", cursor: "pointer", textAlign: "left", width: "100%" }}
           >
@@ -77,7 +91,10 @@ export default function Sidebar() {
           </button>
 
           <button
-            onClick={handleLogout}
+            onClick={async () => {
+              setIsOpen(false);
+              await handleLogout();
+            }}
             className="nav-link"
             style={{ background: "none", border: "none", cursor: "pointer", textAlign: "left", width: "100%", color: "var(--accent-red)" }}
           >
@@ -101,6 +118,7 @@ export default function Sidebar() {
           <div>Registra gastos desde cualquier lugar con el bot.</div>
           <Link
             href="/configuracion#bot"
+            onClick={() => setIsOpen(false)}
             style={{ color: "var(--accent)", textDecoration: "none", fontSize: 11, marginTop: 6, display: "block" }}
           >
             Configurar bot →
@@ -108,19 +126,45 @@ export default function Sidebar() {
         </div>
       </aside>
 
+      {isOpen && (
+        <div className="sidebar-overlay" onClick={() => setIsOpen(false)} />
+      )}
+
       <header className="mobile-header">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ 
-            width: 36, height: 36, background: "var(--accent)", 
-            display: "flex", alignItems: "center", justifyContent: "center",
-            border: "2px solid var(--border)", boxShadow: "2px 2px 0px var(--border)"
-          }}>
-            <span style={{ fontSize: 20 }}>💸</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button 
+            onClick={() => setIsOpen(true)}
+            className="btn btn-secondary btn-icon"
+            style={{ 
+              width: 40, 
+              height: 40, 
+              display: "flex", 
+              flexDirection: "column",
+              gap: 4, 
+              alignItems: "center", 
+              justifyContent: "center",
+              padding: 0
+            }}
+            aria-label="Abrir menú"
+          >
+            <span style={{ width: 18, height: 2, background: "var(--text-main)", display: "block" }}></span>
+            <span style={{ width: 18, height: 2, background: "var(--text-main)", display: "block" }}></span>
+            <span style={{ width: 18, height: 2, background: "var(--text-main)", display: "block" }}></span>
+          </button>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ 
+              width: 32, height: 32, background: "var(--accent)", 
+              display: "flex", alignItems: "center", justifyContent: "center",
+              border: "2px solid var(--border)", boxShadow: "2px 2px 0px var(--border)"
+            }}>
+              <span style={{ fontSize: 16 }}>💸</span>
+            </div>
+            <span style={{ 
+              fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 16, 
+              textTransform: "uppercase", letterSpacing: "-0.02em", color: "var(--text-main)"
+            }}>Churupo</span>
           </div>
-          <span style={{ 
-            fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 18, 
-            textTransform: "uppercase", letterSpacing: "-0.02em", color: "var(--text-main)"
-          }}>Churupo</span>
         </div>
 
         <button 
@@ -131,24 +175,6 @@ export default function Sidebar() {
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
       </header>
-
-      <nav className="mobile-bottom-nav">
-        {NAV_ITEMS.map((item) => {
-          const isActive = (pathname || "").startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`mobile-nav-item ${isActive ? "active" : ""}`}
-            >
-              <div className={`mobile-nav-icon ${isActive ? "active" : ""}`}>
-                <span style={{ fontSize: 20 }}>{getEmojiForHref(item.href)}</span>
-              </div>
-              <span className="mobile-nav-label">{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
     </>
   );
 }
